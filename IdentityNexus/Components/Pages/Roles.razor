@@ -1,0 +1,127 @@
+@page "/roles"
+@inject IRoleService RoleService
+
+<PageTitle>Roles</PageTitle>
+
+<div class="nx-page">
+    <header class="nx-page-header">
+        <div>
+            <h1>Roles</h1>
+            <p class="nx-muted">@items.Count @(items.Count == 1 ? "role" : "roles")</p>
+        </div>
+        <button type="button" class="nx-button nx-button-primary" @onclick="NewRole">
+            <Icon Name="plus" />
+            New role
+        </button>
+    </header>
+
+    @if (banner.Count > 0)
+    {
+        <div class="nx-banner" role="alert">
+            @foreach (var message in banner)
+            {
+                <p>@message</p>
+            }
+        </div>
+    }
+
+    <div class="nx-workspace">
+        <div class="nx-content">
+            @if (items.Count == 0)
+            {
+                <div class="nx-empty">
+                    <h2>No roles yet</h2>
+                    <p class="nx-muted">Create one, then assign it from a user's Access tab.</p>
+                </div>
+            }
+            else
+            {
+                <table class="nx-table">
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Claims</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var role in items)
+                        {
+                            <tr class="@(selected?.Id == role.Id ? "is-selected" : null)" @onclick="() => Select(role)">
+                                <td>
+                                    <div class="nx-primary">@role.Name</div>
+                                </td>
+                                <td>
+                                    @foreach (var claim in role.Claims)
+                                    {
+                                        <span class="nx-pill">@ClaimTypeCatalog.DisplayName(claim.Type)</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        @if (editorOpen)
+        {
+            <RoleEditor Role="selected" IsNew="isNew" OnClose="Close" OnChanged="ReloadAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    private List<RoleSummary> items = [];
+    private List<string> banner = [];
+    private RoleSummary? selected;
+    private bool editorOpen;
+    private bool isNew;
+
+    protected override async Task OnInitializedAsync() => await ReloadAsync(null);
+
+    private async Task ReloadAsync(string? id)
+    {
+        var result = await RoleService.ListAsync();
+        if (!result.IsSuccessStatus())
+        {
+            banner = [.. result.GetDisplayMessages()];
+            return;
+        }
+
+        banner = [];
+        items = [.. result.Value];
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            editorOpen = false;
+            selected = null;
+            isNew = false;
+            return;
+        }
+
+        selected = items.FirstOrDefault(role => role.Id == id);
+        isNew = false;
+        editorOpen = selected is not null;
+    }
+
+    private void NewRole()
+    {
+        isNew = true;
+        selected = null;
+        editorOpen = true;
+        banner = [];
+    }
+
+    private void Select(RoleSummary role)
+    {
+        isNew = false;
+        selected = role;
+        editorOpen = true;
+        banner = [];
+    }
+
+    private void Close()
+    {
+        editorOpen = false;
+        isNew = false;
+    }
+}

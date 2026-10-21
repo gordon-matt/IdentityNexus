@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="IdentityNexus/IdentityNexus.csproj" />
+  <Project Path="IdentityNexus.Services/IdentityNexus.Services.csproj" />
+  <Project Path="IdentityNexus.Demo/IdentityNexus.Demo.csproj" />
+  <Project Path="IdentityNexus.Tests/IdentityNexus.Tests.csproj" />
+</Solution>

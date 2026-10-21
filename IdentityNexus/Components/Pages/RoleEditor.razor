@@ -1,0 +1,191 @@
+@inject IRoleService Roles
+
+<aside class="nx-details">
+    <header class="nx-details-header">
+        <div>
+            <h2>@(IsNew ? "New role" : name)</h2>
+        </div>
+        <button type="button" class="nx-icon-button" aria-label="Close" @onclick="OnClose">
+            <Icon Name="x" />
+        </button>
+    </header>
+
+    @if (messages.Count > 0)
+    {
+        <div class="nx-banner @(saved ? "nx-banner-ok" : null)" role="status">
+            @foreach (var message in messages)
+            {
+                <p>@message</p>
+            }
+        </div>
+    }
+
+    <div class="nx-form">
+        <label class="nx-field">
+            <span>Name</span>
+            <input class="nx-input" @bind="name" />
+        </label>
+
+        <h3>Claims</h3>
+        @if (claims.Count == 0)
+        {
+            <p class="nx-muted">No claims on this role.</p>
+        }
+        else
+        {
+            <ul class="nx-claim-list">
+                @foreach (var claim in claims)
+                {
+                    <li>
+                        <span>
+                            <strong>@ClaimTypeCatalog.DisplayName(claim.Type)</strong>
+                            <span class="nx-muted nx-small">@claim.Value</span>
+                        </span>
+                        <button type="button" class="nx-icon-button" aria-label="Remove claim" @onclick="() => claims.Remove(claim)">
+                            <Icon Name="x" />
+                        </button>
+                    </li>
+                }
+            </ul>
+        }
+
+        <label class="nx-field">
+            <span>Type</span>
+            <select class="nx-input" @bind="claimTypeChoice">
+                <option value="">Choose a type</option>
+                @foreach (var option in ClaimTypeCatalog.All)
+                {
+                    <option value="@option.Type">@option.Name</option>
+                }
+                <option value="custom">Custom</option>
+            </select>
+        </label>
+        @if (claimTypeChoice == "custom")
+        {
+            <label class="nx-field">
+                <span>Custom type</span>
+                <input class="nx-input" @bind="customClaimType" />
+            </label>
+        }
+        <label class="nx-field">
+            <span>Value</span>
+            <input class="nx-input" @bind="claimValue" />
+        </label>
+        <button type="button" class="nx-button" @onclick="AddClaim">Add claim</button>
+    </div>
+
+    <footer class="nx-details-footer">
+        @if (!IsNew)
+        {
+            <button type="button" class="nx-button nx-button-danger" disabled="@busy" @onclick="DeleteAsync">Delete</button>
+        }
+        <button type="button" class="nx-button" @onclick="OnClose">Cancel</button>
+        <button type="button" class="nx-button nx-button-primary" disabled="@busy" @onclick="SaveAsync">
+            @(IsNew ? "Create" : "Save")
+        </button>
+    </footer>
+</aside>
+
+<ConfirmDialog @ref="confirm" />
+
+@code {
+    [Parameter] public RoleSummary? Role { get; set; }
+
+    [Parameter] public bool IsNew { get; set; }
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter] public EventCallback<string?> OnChanged { get; set; }
+
+    private ConfirmDialog confirm = default!;
+    private string? loadedKey;
+    private bool busy;
+    private bool saved;
+    private string name = string.Empty;
+    private List<UserClaim> claims = [];
+    private List<string> messages = [];
+    private string claimTypeChoice = string.Empty;
+    private string customClaimType = string.Empty;
+    private string claimValue = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        string key = IsNew ? "new" : Role?.Id ?? string.Empty;
+        if (key == loadedKey)
+        {
+            return;
+        }
+
+        loadedKey = key;
+        messages = [];
+        saved = false;
+        claimTypeChoice = string.Empty;
+        customClaimType = string.Empty;
+        claimValue = string.Empty;
+        name = IsNew ? string.Empty : Role?.Name ?? string.Empty;
+        claims = IsNew || Role is null ? [] : [.. Role.Claims];
+    }
+
+    private void AddClaim()
+    {
+        string type = claimTypeChoice == "custom" ? customClaimType.Trim() : claimTypeChoice;
+        string value = claimValue.Trim();
+        if (type.Length == 0 || value.Length == 0)
+        {
+            saved = false;
+            messages = ["Enter a claim type and a value."];
+            return;
+        }
+
+        if (claims.Any(claim => claim.Type == type && claim.Value == value))
+        {
+            saved = false;
+            messages = ["That claim is already on the role."];
+            return;
+        }
+
+        claims.Add(new UserClaim(type, value));
+        claimValue = string.Empty;
+        messages = [];
+    }
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        saved = false;
+        var result = await Roles.SaveAsync(new SaveRoleRequest(IsNew ? null : Role?.Id, name, claims));
+        busy = false;
+        if (!result.IsSuccessStatus())
+        {
+            messages = [.. result.GetDisplayMessages()];
+            return;
+        }
+
+        await OnChanged.InvokeAsync(result.Value.Id);
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (Role is null)
+        {
+            return;
+        }
+
+        if (!await confirm.ShowAsync("Delete role", $"Delete {name}? Users keep their accounts, but they lose this role.", "Delete", isDestructive: true))
+        {
+            return;
+        }
+
+        busy = true;
+        var result = await Roles.DeleteAsync(Role.Id);
+        busy = false;
+        if (!result.IsSuccessStatus())
+        {
+            saved = false;
+            messages = [.. result.GetDisplayMessages()];
+            return;
+        }
+
+        await OnChanged.InvokeAsync(null);
+    }
+}

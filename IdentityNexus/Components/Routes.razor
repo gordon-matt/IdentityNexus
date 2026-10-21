@@ -1,0 +1,16 @@
+<Router AppAssembly="typeof(Routes).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(NxLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(NxLayout)">
+            <div class="nx-page">
+                <div class="nx-empty">
+                    <h1>That page isn't here</h1>
+                    <p class="nx-muted">The link doesn't match a page in IdentityNexus.</p>
+                    <a class="nx-button nx-button-primary" href="./">Back to the overview</a>
+                </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>IdentityNexus</RootNamespace>
+		<Description>A Blazor UI for administering ASP.NET Core Identity users and roles.</Description>
+		<Version>1.0.0</Version>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!--
+		  Served by IdentityNexus's own endpoint, so the UI works whether or not the host
+		  calls UseStaticFiles or MapStaticAssets.
+		-->
+		<EmbeddedResource Include="Assets\*" LogicalName="IdentityNexus.Assets.%(Filename)%(Extension)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="build\IdentityNexus.props" Pack="true" PackagePath="build;buildTransitive" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\IdentityNexus.Services\IdentityNexus.Services.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,31 @@
+@inject IOptions<IdentityNexusOptions> Options
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <base href="@($"{Options.Value.BasePath}/")" />
+    <title>@Options.Value.Title</title>
+    <link rel="stylesheet" href="@EmbeddedAssets.Url("identitynexus.css")" />
+    <script src="@EmbeddedAssets.Url("theme.js")"></script>
+</head>
+
+<body>
+    <Routes @rendermode="IdentityNexusRenderMode.Interactive" />
+
+    <div id="nx-boot" class="nx-boot">
+        <div class="nx-boot-panel">
+            <p class="nx-boot-title">@Options.Value.Title</p>
+            <div class="nx-spinner" role="status" aria-label="Loading"></div>
+        </div>
+    </div>
+
+    <script src="_framework/blazor.web.js"
+            onerror="document.getElementById('nx-boot').innerHTML='<p>The management UI could not be loaded. Check that the host serves static web assets.</p>'"></script>
+    <script src="@EmbeddedAssets.Url("identitynexus.js")"></script>
+</body>
+
+</html>

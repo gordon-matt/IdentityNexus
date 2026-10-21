@@ -1,0 +1,61 @@
+@page "/"
+@inject IUserService Users
+
+<PageTitle>Overview</PageTitle>
+
+<div class="nx-page">
+    <header class="nx-page-header">
+        <div>
+            <h1>Overview</h1>
+            <p class="nx-muted">Accounts and roles in this application's Identity store.</p>
+        </div>
+    </header>
+
+    @if (error is not null)
+    {
+        <div class="nx-banner" role="alert">@error</div>
+    }
+    else if (overview is null)
+    {
+        <p class="nx-muted">Loading…</p>
+    }
+    else
+    {
+        <div class="nx-stats">
+            <a class="nx-stat" href="users">
+                <span class="nx-stat-value">@overview.Users</span>
+                <span class="nx-stat-label">Users</span>
+            </a>
+            <a class="nx-stat" href="roles">
+                <span class="nx-stat-value">@overview.Roles</span>
+                <span class="nx-stat-label">Roles</span>
+            </a>
+            <a class="nx-stat" href="users?locked=1">
+                <span class="nx-stat-value">@overview.LockedOut</span>
+                <span class="nx-stat-label">Locked out</span>
+            </a>
+            <a class="nx-stat" href="users?unconfirmed=1">
+                <span class="nx-stat-value">@overview.UnconfirmedEmail</span>
+                <span class="nx-stat-label">Email unconfirmed</span>
+            </a>
+        </div>
+    }
+</div>
+
+@code {
+    private IdentityOverview? overview;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Users.GetOverviewAsync();
+        if (result.IsSuccessStatus())
+        {
+            overview = result.Value;
+        }
+        else
+        {
+            error = result.GetDisplayMessages().FirstOrDefault();
+        }
+    }
+}

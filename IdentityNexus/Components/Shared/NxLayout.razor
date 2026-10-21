@@ -1,0 +1,81 @@
+@inherits LayoutComponentBase
+@inject IOptions<IdentityNexusOptions> Options
+@inject AuthenticationStateProvider Authentication
+@inject IJSRuntime JS
+
+<div class="nx-app @(sidebarOpen ? "nx-sidebar-open" : null)">
+    <header class="nx-topbar">
+        <button type="button" class="nx-icon-button nx-menu-button" aria-label="Toggle menu" @onclick="() => sidebarOpen = !sidebarOpen">
+            <Icon Name="menu" />
+        </button>
+        <a class="nx-brand" href="./">@Options.Value.Title</a>
+        <div class="nx-topbar-actions">
+            @if (!string.IsNullOrWhiteSpace(account))
+            {
+                <span class="nx-account" title="@account">@account</span>
+            }
+            <button type="button" class="nx-icon-button" title="@(theme == "dark" ? "Light theme" : "Dark theme")" @onclick="ToggleThemeAsync">
+                <Icon Name="@(theme == "dark" ? "sun" : "moon")" />
+            </button>
+            @if (!string.IsNullOrWhiteSpace(Options.Value.LogoutPath))
+            {
+                <form method="post" action="@Options.Value.LogoutPath" data-enhance="false">
+                    <button type="submit" class="nx-icon-button" title="Sign out">
+                        <Icon Name="log-out" />
+                    </button>
+                </form>
+            }
+        </div>
+    </header>
+
+    <div class="nx-scrim" @onclick="() => sidebarOpen = false"></div>
+
+    <aside class="nx-sidebar">
+        <nav class="nx-nav" aria-label="Identity">
+            <NavLink class="nx-nav-link" href="./" Match="NavLinkMatch.All" @onclick="CloseMenu">
+                <Icon Name="layout" />
+                <span>Overview</span>
+            </NavLink>
+            <NavLink class="nx-nav-link" href="users" @onclick="CloseMenu">
+                <Icon Name="users" />
+                <span>Users</span>
+            </NavLink>
+            <NavLink class="nx-nav-link" href="roles" @onclick="CloseMenu">
+                <Icon Name="shield" />
+                <span>Roles</span>
+            </NavLink>
+        </nav>
+    </aside>
+
+    <main class="nx-main">
+        @Body
+    </main>
+</div>
+
+@code {
+    private bool sidebarOpen;
+    private string? account;
+    private string theme = "light";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await Authentication.GetAuthenticationStateAsync();
+        account = state.User.Identity?.Name;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            theme = await JS.InvokeAsync<string>("identityNexus.theme");
+            await JS.InvokeVoidAsync("identityNexus.ready");
+        }
+    }
+
+    private async Task ToggleThemeAsync()
+    {
+        theme = await JS.InvokeAsync<string>("identityNexus.toggleTheme");
+    }
+
+    private void CloseMenu() => sidebarOpen = false;
+}

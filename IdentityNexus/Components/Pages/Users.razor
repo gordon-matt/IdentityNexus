@@ -1,0 +1,283 @@
+@page "/users"
+@using Microsoft.AspNetCore.WebUtilities
+@inject IUserService UserService
+@inject IRoleService RoleService
+@inject NavigationManager Navigation
+@inject IOptions<IdentityNexusOptions> Options
+
+<PageTitle>Users</PageTitle>
+
+<div class="nx-page">
+    <header class="nx-page-header">
+        <div>
+            <h1>Users</h1>
+            <p class="nx-muted">@total.ToString("N0") @(total == 1 ? "account" : "accounts")</p>
+        </div>
+        <button type="button" class="nx-button nx-button-primary" @onclick="() => OpenAsync(null)">
+            <Icon Name="plus" />
+            New user
+        </button>
+    </header>
+
+    <div class="nx-toolbar">
+        <label class="nx-search">
+            <Icon Name="search" Class="nx-search-icon" />
+            <input class="nx-search-input" type="search" placeholder="Search name, email or phone" @bind="search" @bind:event="oninput" @bind:after="QueueSearch" />
+        </label>
+        <select class="nx-input nx-select" @bind="role" @bind:after="ReloadFirstPage">
+            <option value="">All roles</option>
+            @foreach (var item in roleOptions)
+            {
+                <option value="@item.Name">@item.Name</option>
+            }
+        </select>
+        <label class="nx-check">
+            <input type="checkbox" @bind="lockedOnly" @bind:after="ReloadFirstPage" />
+            Locked out
+        </label>
+        <label class="nx-check">
+            <input type="checkbox" @bind="unconfirmedOnly" @bind:after="ReloadFirstPage" />
+            Unconfirmed
+        </label>
+    </div>
+
+    @if (banner.Count > 0)
+    {
+        <div class="nx-banner" role="alert">
+            @foreach (var message in banner)
+            {
+                <p>@message</p>
+            }
+        </div>
+    }
+
+    <div class="nx-workspace">
+        <div class="nx-content">
+            @if (items.Count == 0 && !loading)
+            {
+                <div class="nx-empty">
+                    <h2>No users match</h2>
+                    <p class="nx-muted">Try a different search, or create the first account.</p>
+                </div>
+            }
+            else
+            {
+                <table class="nx-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Roles</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in items)
+                        {
+                            <tr class="@(selected?.Id == user.Id ? "is-selected" : null)" @onclick="() => OpenAsync(user.Id)">
+                                <td>
+                                    <div class="nx-primary">@(user.UserName ?? user.Email)</div>
+                                    <div class="nx-muted nx-small">@user.Email</div>
+                                </td>
+                                <td>
+                                    @foreach (var name in user.Roles)
+                                    {
+                                        <span class="nx-pill">@name</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.LockedOut)
+                                    {
+                                        <span class="nx-pill nx-pill-warn">Locked</span>
+                                    }
+                                    else if (!user.EmailConfirmed)
+                                    {
+                                        <span class="nx-pill">Unconfirmed</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="nx-pill nx-pill-ok">Active</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="nx-pager">
+                    <button type="button" class="nx-icon-button" disabled="@(page <= 1)" aria-label="Previous page" @onclick="PreviousPage">
+                        <Icon Name="chevron-left" />
+                    </button>
+                    <span>Page @(page) of @pageCount</span>
+                    <button type="button" class="nx-icon-button" disabled="@(page >= pageCount)" aria-label="Next page" @onclick="NextPage">
+                        <Icon Name="chevron-right" />
+                    </button>
+                </div>
+            }
+        </div>
+
+        @if (editorOpen)
+        {
+            <UserEditor User="selected"
+                        IsNew="isNew"
+                        Roles="roleOptions"
+                        OnClose="CloseEditor"
+                        OnChanged="RefreshAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<UserSummary> items = [];
+    private IReadOnlyList<RoleSummary> roleOptions = [];
+    private List<string> banner = [];
+    private UserDetail? selected;
+
+    private string search = string.Empty;
+    private string role = string.Empty;
+    private bool lockedOnly;
+    private bool unconfirmedOnly;
+    private bool editorOpen;
+    private bool isNew;
+    private bool loading = true;
+    private int page = 1;
+    private int total;
+    private int pageCount = 1;
+    private CancellationTokenSource? searchDelay;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        lockedOnly = query.ContainsKey("locked");
+        unconfirmedOnly = query.ContainsKey("unconfirmed");
+
+        var roles = await RoleService.ListAsync();
+        if (roles.IsSuccessStatus())
+        {
+            roleOptions = roles.Value.Where(item => !string.IsNullOrWhiteSpace(item.Name)).ToArray();
+        }
+
+        await LoadAsync();
+    }
+
+    private void QueueSearch()
+    {
+        searchDelay?.Cancel();
+        searchDelay = new CancellationTokenSource();
+        var token = searchDelay.Token;
+        _ = DebounceAsync(token);
+    }
+
+    private async Task DebounceAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(250, token);
+            page = 1;
+            await LoadAsync();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private Task ReloadFirstPage()
+    {
+        page = 1;
+        return LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        var result = await UserService.SearchAsync(new UserListQuery
+        {
+            Search = search,
+            Role = role,
+            LockedOutOnly = lockedOnly,
+            UnconfirmedOnly = unconfirmedOnly,
+            Page = page,
+            PageSize = Options.Value.PageSize,
+        });
+
+        loading = false;
+        if (!result.IsSuccessStatus())
+        {
+            banner = [.. result.GetDisplayMessages()];
+            return;
+        }
+
+        banner = [];
+        items.Clear();
+        items.AddRange(result.Value.Items);
+        total = result.Value.TotalCount;
+        page = result.Value.Page;
+        pageCount = Math.Max(1, (int)Math.Ceiling(total / (double)result.Value.PageSize));
+    }
+
+    private async Task OpenAsync(string? id)
+    {
+        banner = [];
+        if (id is null)
+        {
+            isNew = true;
+            selected = null;
+            editorOpen = true;
+            return;
+        }
+
+        var result = await UserService.GetAsync(id);
+        if (!result.IsSuccessStatus())
+        {
+            banner = [.. result.GetDisplayMessages()];
+            return;
+        }
+
+        isNew = false;
+        selected = result.Value;
+        editorOpen = true;
+    }
+
+    private void CloseEditor()
+    {
+        editorOpen = false;
+        isNew = false;
+    }
+
+    private async Task RefreshAsync(string? id)
+    {
+        var roles = await RoleService.ListAsync();
+        if (roles.IsSuccessStatus())
+        {
+            roleOptions = roles.Value.Where(item => !string.IsNullOrWhiteSpace(item.Name)).ToArray();
+        }
+
+        await LoadAsync();
+        if (!string.IsNullOrWhiteSpace(id))
+        {
+            await OpenAsync(id);
+        }
+        else
+        {
+            CloseEditor();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (page > 1)
+        {
+            page--;
+            await LoadAsync();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (page < pageCount)
+        {
+            page++;
+            await LoadAsync();
+        }
+    }
+}

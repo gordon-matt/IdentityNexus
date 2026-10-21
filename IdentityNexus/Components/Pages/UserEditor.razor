@@ -1,0 +1,503 @@
+@inject IUserService Users
+
+<aside class="nx-details">
+    <header class="nx-details-header">
+        <div>
+            <h2>@(IsNew ? "New user" : (userName.Length == 0 ? "User" : userName))</h2>
+            @if (!IsNew && User is not null)
+            {
+                <p class="nx-muted nx-small">@User.Id</p>
+            }
+        </div>
+        <button type="button" class="nx-icon-button" aria-label="Close" @onclick="OnClose">
+            <Icon Name="x" />
+        </button>
+    </header>
+
+    <div class="nx-tabs" role="tablist">
+        <button type="button" class="nx-tab @(tab == 0 ? "is-active" : null)" @onclick="() => tab = 0">Profile</button>
+        <button type="button" class="nx-tab @(tab == 1 ? "is-active" : null)" @onclick="() => tab = 1">Access</button>
+        @if (!IsNew)
+        {
+            <button type="button" class="nx-tab @(tab == 2 ? "is-active" : null)" @onclick="() => tab = 2">Claims</button>
+            <button type="button" class="nx-tab @(tab == 3 ? "is-active" : null)" @onclick="() => tab = 3">Security</button>
+        }
+    </div>
+
+    @if (messages.Count > 0)
+    {
+        <div class="nx-banner @(calm ? "nx-banner-ok" : null)" role="status">
+            @foreach (var message in messages)
+            {
+                <p>@message</p>
+            }
+        </div>
+    }
+
+    @if (tab == 0)
+    {
+        <div class="nx-form">
+            <label class="nx-field">
+                <span>User name</span>
+                <input class="nx-input" @bind="userName" autocomplete="off" />
+            </label>
+            <label class="nx-field">
+                <span>Email</span>
+                <input class="nx-input" type="email" @bind="email" autocomplete="off" />
+            </label>
+            <label class="nx-check">
+                <input type="checkbox" @bind="emailConfirmed" disabled="@IsNew" />
+                Email confirmed
+            </label>
+            <label class="nx-field">
+                <span>Phone</span>
+                <input class="nx-input" @bind="phone" autocomplete="off" />
+            </label>
+            @if (!IsNew)
+            {
+                <label class="nx-check">
+                    <input type="checkbox" @bind="phoneConfirmed" />
+                    Phone confirmed
+                </label>
+            }
+            @if (IsNew)
+            {
+                <label class="nx-field">
+                    <span>Password</span>
+                    <input class="nx-input" type="password" @bind="password" autocomplete="new-password" />
+                </label>
+                <label class="nx-field">
+                    <span>Confirm password</span>
+                    <input class="nx-input" type="password" @bind="confirmPassword" autocomplete="new-password" />
+                </label>
+            }
+        </div>
+    }
+    else if (tab == 1)
+    {
+        <div class="nx-form">
+            @if (Roles.Count == 0)
+            {
+                <p class="nx-muted">No roles yet. Create one from the Roles page, then come back.</p>
+            }
+            else
+            {
+                @foreach (var role in Roles)
+                {
+                    <label class="nx-check">
+                        <input type="checkbox" checked="@(role.Name is not null && selectedRoles.Contains(role.Name))" @onchange="e => ToggleRole(role.Name!, e.Value is true)" />
+                        @role.Name
+                    </label>
+                }
+            }
+
+            @if (!IsNew)
+            {
+                <label class="nx-check">
+                    <input type="checkbox" @bind="lockoutEnabled" />
+                    Lockout enabled
+                </label>
+                <label class="nx-check">
+                    <input type="checkbox" @bind="lockedOut" />
+                    Locked out now
+                </label>
+                @if (lockedOut)
+                {
+                    <label class="nx-field">
+                        <span>Until (UTC)</span>
+                        <input class="nx-input" type="datetime-local" @bind="lockoutUntil" />
+                    </label>
+                    <p class="nx-muted nx-small">Leave the time blank to keep the account locked.</p>
+                }
+                <label class="nx-check">
+                    <input type="checkbox" @bind="twoFactor" />
+                    Two-factor authentication
+                </label>
+                @if (User is not null && User.AccessFailedCount > 0)
+                {
+                    <p class="nx-muted nx-small">@User.AccessFailedCount failed sign-in @(User.AccessFailedCount == 1 ? "attempt" : "attempts"). Clearing the lockout resets the count.</p>
+                }
+            }
+        </div>
+    }
+    else if (tab == 2)
+    {
+        <div class="nx-form">
+            @if (claims.Count == 0)
+            {
+                <p class="nx-muted">No claims on this account.</p>
+            }
+            else
+            {
+                <ul class="nx-claim-list">
+                    @foreach (var claim in claims)
+                    {
+                        <li>
+                            <span>
+                                <strong>@ClaimTypeCatalog.DisplayName(claim.Type)</strong>
+                                <span class="nx-muted nx-small">@claim.Value</span>
+                            </span>
+                            <button type="button" class="nx-icon-button" aria-label="Remove claim" @onclick="() => claims.Remove(claim)">
+                                <Icon Name="x" />
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <label class="nx-field">
+                <span>Type</span>
+                <select class="nx-input" @bind="claimTypeChoice">
+                    <option value="">Choose a type</option>
+                    @foreach (var option in ClaimTypeCatalog.All)
+                    {
+                        <option value="@option.Type">@option.Name</option>
+                    }
+                    <option value="custom">Custom</option>
+                </select>
+            </label>
+            @if (claimTypeChoice == "custom")
+            {
+                <label class="nx-field">
+                    <span>Custom type</span>
+                    <input class="nx-input" @bind="customClaimType" />
+                </label>
+            }
+            <label class="nx-field">
+                <span>Value</span>
+                <input class="nx-input" @bind="claimValue" />
+            </label>
+            <button type="button" class="nx-button" @onclick="AddClaim">Add claim</button>
+        </div>
+    }
+    else if (tab == 3 && !IsNew)
+    {
+        <div class="nx-form">
+            <label class="nx-field">
+                <span>New password</span>
+                <input class="nx-input" type="password" @bind="password" autocomplete="new-password" />
+            </label>
+            <label class="nx-field">
+                <span>Confirm password</span>
+                <input class="nx-input" type="password" @bind="confirmPassword" autocomplete="new-password" />
+            </label>
+            <button type="button" class="nx-button" disabled="@busy" @onclick="SetPasswordAsync">Set password</button>
+
+            <h3>External logins</h3>
+            @if (logins.Count == 0)
+            {
+                <p class="nx-muted">None linked.</p>
+            }
+            else
+            {
+                <ul class="nx-claim-list">
+                    @foreach (var login in logins)
+                    {
+                        <li>
+                            <span>
+                                <strong>@(login.ProviderDisplayName ?? login.LoginProvider)</strong>
+                                <span class="nx-muted nx-small">@login.ProviderKey</span>
+                            </span>
+                            <button type="button" class="nx-icon-button" aria-label="Remove login" @onclick="() => RemoveLoginAsync(login)">
+                                <Icon Name="x" />
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <button type="button" class="nx-button" disabled="@busy" @onclick="ResetAuthenticatorAsync">Reset authenticator</button>
+            <button type="button" class="nx-button nx-button-danger" disabled="@busy" @onclick="DeleteAsync">Delete user</button>
+        </div>
+    }
+
+    <footer class="nx-details-footer">
+        <button type="button" class="nx-button" @onclick="OnClose">Cancel</button>
+        @if (tab != 3)
+        {
+            <button type="button" class="nx-button nx-button-primary" disabled="@busy" @onclick="SaveAsync">
+                @(IsNew ? "Create" : "Save")
+            </button>
+        }
+    </footer>
+</aside>
+
+<ConfirmDialog @ref="confirm" />
+
+@code {
+    [Parameter] public UserDetail? User { get; set; }
+
+    [Parameter] public bool IsNew { get; set; }
+
+    [Parameter] public IReadOnlyList<RoleSummary> Roles { get; set; } = [];
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter] public EventCallback<string?> OnChanged { get; set; }
+
+    private ConfirmDialog confirm = default!;
+    private string? loadedKey;
+    private int tab;
+    private bool busy;
+    private bool calm;
+    private List<string> messages = [];
+
+    private string userName = string.Empty;
+    private string email = string.Empty;
+    private bool emailConfirmed = true;
+    private string phone = string.Empty;
+    private bool phoneConfirmed;
+    private string password = string.Empty;
+    private string confirmPassword = string.Empty;
+    private bool lockoutEnabled = true;
+    private bool lockedOut;
+    private DateTime? lockoutUntil;
+    private bool twoFactor;
+    private HashSet<string> selectedRoles = new(StringComparer.OrdinalIgnoreCase);
+    private List<UserClaim> claims = [];
+    private List<UserLogin> logins = [];
+    private string claimTypeChoice = string.Empty;
+    private string customClaimType = string.Empty;
+    private string claimValue = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        string key = IsNew ? "new" : User?.Id ?? string.Empty;
+        if (key == loadedKey)
+        {
+            return;
+        }
+
+        loadedKey = key;
+        tab = 0;
+        messages = [];
+        calm = false;
+        password = string.Empty;
+        confirmPassword = string.Empty;
+        claimTypeChoice = string.Empty;
+        customClaimType = string.Empty;
+        claimValue = string.Empty;
+
+        if (IsNew || User is null)
+        {
+            userName = string.Empty;
+            email = string.Empty;
+            emailConfirmed = true;
+            phone = string.Empty;
+            phoneConfirmed = false;
+            lockoutEnabled = true;
+            lockedOut = false;
+            lockoutUntil = null;
+            twoFactor = false;
+            selectedRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            claims = [];
+            logins = [];
+            return;
+        }
+
+        userName = User.UserName ?? string.Empty;
+        email = User.Email ?? string.Empty;
+        emailConfirmed = User.EmailConfirmed;
+        phone = User.PhoneNumber ?? string.Empty;
+        phoneConfirmed = User.PhoneNumberConfirmed;
+        lockoutEnabled = User.LockoutEnabled;
+        lockedOut = User.LockoutEnd is { } end && end > DateTimeOffset.UtcNow;
+        lockoutUntil = User.LockoutEnd?.UtcDateTime;
+        twoFactor = User.TwoFactorEnabled;
+        selectedRoles = new HashSet<string>(User.Roles, StringComparer.OrdinalIgnoreCase);
+        claims = [.. User.Claims];
+        logins = [.. User.Logins];
+    }
+
+    private void ToggleRole(string name, bool selected)
+    {
+        if (selected)
+        {
+            selectedRoles.Add(name);
+        }
+        else
+        {
+            selectedRoles.Remove(name);
+        }
+    }
+
+    private void AddClaim()
+    {
+        string type = claimTypeChoice == "custom" ? customClaimType.Trim() : claimTypeChoice;
+        string value = claimValue.Trim();
+        if (type.Length == 0 || value.Length == 0)
+        {
+            messages = ["Enter a claim type and a value."];
+            calm = false;
+            return;
+        }
+
+        if (claims.Any(claim => claim.Type == type && claim.Value == value))
+        {
+            messages = ["That claim is already on the account."];
+            calm = false;
+            return;
+        }
+
+        claims.Add(new UserClaim(type, value));
+        claimValue = string.Empty;
+        messages = [];
+    }
+
+    private async Task SaveAsync()
+    {
+        if (IsNew && password != confirmPassword)
+        {
+            messages = ["The passwords do not match."];
+            calm = false;
+            return;
+        }
+
+        busy = true;
+        messages = [];
+        calm = false;
+
+        if (IsNew)
+        {
+            var created = await Users.CreateAsync(new CreateUserRequest(userName, email, password, phone, [.. selectedRoles]));
+            busy = false;
+            if (!created.IsSuccessStatus())
+            {
+                messages = [.. created.GetDisplayMessages()];
+                calm = false;
+                return;
+            }
+
+            await OnChanged.InvokeAsync(created.Value.Id);
+            return;
+        }
+
+        if (!TryReadLockout(out DateTimeOffset? lockoutEnd))
+        {
+            busy = false;
+            return;
+        }
+
+        var updated = await Users.UpdateAsync(new UpdateUserRequest(
+            User!.Id,
+            userName,
+            email,
+            emailConfirmed,
+            phone,
+            phoneConfirmed,
+            lockoutEnabled,
+            lockoutEnd,
+            twoFactor,
+            [.. selectedRoles],
+            claims));
+
+        busy = false;
+        if (!updated.IsSuccessStatus())
+        {
+            messages = [.. updated.GetDisplayMessages()];
+            calm = false;
+            return;
+        }
+
+        await OnChanged.InvokeAsync(updated.Value.Id);
+    }
+
+    private bool TryReadLockout(out DateTimeOffset? end)
+    {
+        if (!lockedOut)
+        {
+            end = null;
+            return true;
+        }
+
+        end = lockoutUntil is null
+            ? DateTimeOffset.UtcNow.AddYears(100)
+            : new DateTimeOffset(DateTime.SpecifyKind(lockoutUntil.Value, DateTimeKind.Utc));
+        return true;
+    }
+
+    private async Task SetPasswordAsync()
+    {
+        if (password != confirmPassword)
+        {
+            messages = ["The passwords do not match."];
+            calm = false;
+            return;
+        }
+
+        busy = true;
+        var result = await Users.SetPasswordAsync(new SetPasswordRequest(User!.Id, password));
+        busy = false;
+        messages = result.IsSuccessStatus() ? ["Password updated."] : [.. result.GetDisplayMessages()];
+        calm = result.IsSuccessStatus();
+        if (result.IsSuccessStatus())
+        {
+            password = string.Empty;
+            confirmPassword = string.Empty;
+        }
+    }
+
+    private async Task RemoveLoginAsync(UserLogin login)
+    {
+        if (!await confirm.ShowAsync("Remove login", $"Remove the {login.LoginProvider} login from this account?", "Remove", isDestructive: true))
+        {
+            return;
+        }
+
+        busy = true;
+        var result = await Users.RemoveLoginAsync(new RemoveLoginRequest(User!.Id, login.LoginProvider, login.ProviderKey));
+        busy = false;
+        if (!result.IsSuccessStatus())
+        {
+            messages = [.. result.GetDisplayMessages()];
+            calm = false;
+            return;
+        }
+
+        logins.Remove(login);
+        messages = [];
+    }
+
+    private async Task ResetAuthenticatorAsync()
+    {
+        if (!await confirm.ShowAsync("Reset authenticator", "This turns off two-factor authentication and clears the authenticator key.", "Reset", isDestructive: true))
+        {
+            return;
+        }
+
+        busy = true;
+        var result = await Users.ResetAuthenticatorAsync(User!.Id);
+        busy = false;
+        if (!result.IsSuccessStatus())
+        {
+            messages = [.. result.GetDisplayMessages()];
+            calm = false;
+            return;
+        }
+
+        twoFactor = false;
+        calm = true;
+        messages = ["Authenticator reset."];
+        await OnChanged.InvokeAsync(User.Id);
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (!await confirm.ShowAsync("Delete user", $"Delete {userName}? This cannot be undone.", "Delete", isDestructive: true))
+        {
+            return;
+        }
+
+        busy = true;
+        var result = await Users.DeleteAsync(User!.Id);
+        busy = false;
+        if (!result.IsSuccessStatus())
+        {
+            messages = [.. result.GetDisplayMessages()];
+            calm = false;
+            return;
+        }
+
+        await OnChanged.InvokeAsync(null);
+    }
+}
