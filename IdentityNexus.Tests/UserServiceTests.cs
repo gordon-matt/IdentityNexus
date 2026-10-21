@@ -78,6 +78,44 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task Update_SignedInAccount_RefusesLockout()
+    {
+        using var host = await IdentityTestHost.CreateAsync();
+        var created = await host.Users.CreateAsync(new CreateUserRequest("ada", "ada@example.com", "password", null, []));
+        host.SignInAs(created.Value.Id);
+
+        var locked = await host.Users.UpdateAsync(new UpdateUserRequest(
+            created.Value.Id,
+            "ada",
+            "ada@example.com",
+            true,
+            null,
+            false,
+            true,
+            DateTimeOffset.UtcNow.AddHours(2),
+            false,
+            [],
+            []));
+        var renamed = await host.Users.UpdateAsync(new UpdateUserRequest(
+            created.Value.Id,
+            "ada.lovelace",
+            "ada@example.com",
+            true,
+            null,
+            false,
+            true,
+            null,
+            false,
+            [],
+            []));
+
+        Assert.Equal(ResultStatus.Conflict, locked.Status);
+        Assert.True(renamed.IsSuccessStatus());
+        Assert.Equal("ada.lovelace", renamed.Value.UserName);
+        Assert.False(renamed.Value.LockoutEnd > DateTimeOffset.UtcNow);
+    }
+
+    [Fact]
     public async Task Delete_SignedInAccount_Conflicts()
     {
         using var host = await IdentityTestHost.CreateAsync();

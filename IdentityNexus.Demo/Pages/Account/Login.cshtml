@@ -1,0 +1,36 @@
+@page "/account/login"
+@model IdentityNexus.Demo.Pages.Account.LoginModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in</title>
+    <link rel="icon" type="image/png" href="/img/Icon.png" />
+    <link rel="stylesheet" href="/css/login.css" />
+</head>
+<body>
+    <form method="post">
+        <img class="logo" src="/img/Logo.png" alt="IdentityNexus" width="251" height="56" />
+        <p>Demo account: @DemoData.AdminEmail / @DemoData.AdminPassword</p>
+        @if (!string.IsNullOrWhiteSpace(Model.Error))
+        {
+            <p class="error">@Model.Error</p>
+        }
+        <input type="hidden" asp-for="ReturnUrl" />
+        <label>
+            <span>Email</span>
+            <input asp-for="Email" type="email" autocomplete="username" required />
+        </label>
+        <label>
+            <span>Password</span>
+            <input asp-for="Password" type="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit">Sign in</button>
+    </form>
+</body>
+</html>

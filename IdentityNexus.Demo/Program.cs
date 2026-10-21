@@ -57,6 +57,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/account/login";
 });
 
+builder.Services.AddRazorPages();
 builder.Services.AddIdentityNexus<ApplicationUser, ApplicationRole>(options =>
 {
     options.LogoutPath = "/account/logout";
@@ -71,32 +72,12 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/", () => Results.Redirect("/identity"));
-
-app.MapGet("/account/login", (string? returnUrl) =>
-    Results.Content(LoginPage.Html(LocalReturn(returnUrl)), "text/html"));
-
-app.MapPost("/account/login", async (HttpRequest request, UserManager<ApplicationUser> users, SignInManager<ApplicationUser> signIn) =>
-{
-    var form = await request.ReadFormAsync();
-    string email = form["email"].ToString();
-    string password = form["password"].ToString();
-    string returnUrl = LocalReturn(form["returnUrl"].ToString());
-
-    var user = await users.FindByEmailAsync(email);
-    if (user is null)
-    {
-        return Results.Content(LoginPage.Html(returnUrl, "Those credentials were not accepted."), "text/html");
-    }
-
-    var result = await signIn.PasswordSignInAsync(user, password, isPersistent: true, lockoutOnFailure: true);
-    return result.Succeeded
-        ? Results.Redirect(returnUrl)
-        : Results.Content(LoginPage.Html(returnUrl, "Those credentials were not accepted."), "text/html");
-}).DisableAntiforgery();
+app.MapRazorPages();
 
 app.MapPost("/account/logout", async (SignInManager<ApplicationUser> signIn) =>
 {
@@ -112,11 +93,3 @@ static string RequiredConnection(string provider, string? connectionString) =>
     string.IsNullOrWhiteSpace(connectionString)
         ? throw new InvalidOperationException($"ConnectionStrings:IdentityNexus is required for {provider}.")
         : connectionString;
-
-static string LocalReturn(string? url) =>
-    !string.IsNullOrWhiteSpace(url)
-    && Uri.IsWellFormedUriString(url, UriKind.Relative)
-    && url.StartsWith('/')
-    && !url.StartsWith("//", StringComparison.Ordinal)
-        ? url
-        : "/identity";

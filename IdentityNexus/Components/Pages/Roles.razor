@@ -36,30 +36,26 @@
             }
             else
             {
-                <table class="nx-table">
-                    <thead>
-                        <tr>
-                            <th>Role</th>
-                            <th>Claims</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div class="nx-list" role="table">
+                    <div class="nx-list-head nx-roles-grid" role="row">
+                        <span>Role</span>
+                        <span>Claims</span>
+                    </div>
+                    <div class="nx-scroll">
                         @foreach (var role in items)
                         {
-                            <tr class="@(selected?.Id == role.Id ? "is-selected" : null)" @onclick="() => Select(role)">
-                                <td>
-                                    <div class="nx-primary">@role.Name</div>
-                                </td>
-                                <td>
+                            <div class="nx-row nx-roles-grid nx-status-role @(selected?.Id == role.Id ? "is-selected" : null)" role="row" @onclick="() => Select(role)">
+                                <span class="nx-cell nx-primary">@role.Name</span>
+                                <span class="nx-cell nx-cell-pills">
                                     @foreach (var claim in role.Claims)
                                     {
                                         <span class="nx-pill">@ClaimTypeCatalog.DisplayName(claim.Type)</span>
                                     }
-                                </td>
-                            </tr>
+                                </span>
+                            </div>
                         }
-                    </tbody>
-                </table>
+                    </div>
+                </div>
             }
         </div>
 

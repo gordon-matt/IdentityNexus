@@ -62,55 +62,53 @@
             }
             else
             {
-                <table class="nx-table">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Roles</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div class="nx-list" role="table">
+                    <div class="nx-list-head nx-users-grid" role="row">
+                        <span>User</span>
+                        <span>Roles</span>
+                        <span>Status</span>
+                    </div>
+                    <div class="nx-scroll">
                         @foreach (var user in items)
                         {
-                            <tr class="@(selected?.Id == user.Id ? "is-selected" : null)" @onclick="() => OpenAsync(user.Id)">
-                                <td>
-                                    <div class="nx-primary">@(user.UserName ?? user.Email)</div>
-                                    <div class="nx-muted nx-small">@user.Email</div>
-                                </td>
-                                <td>
+                            var status = user.LockedOut ? "nx-status-locked" : user.EmailConfirmed ? "nx-status-active" : "nx-status-unconfirmed";
+                            <div class="nx-row nx-users-grid @status @(selected?.Id == user.Id ? "is-selected" : null)" role="row" @onclick="() => OpenAsync(user.Id)">
+                                <span class="nx-cell nx-cell-stack">
+                                    <span class="nx-primary">@(user.UserName ?? user.Email)</span>
+                                    <span class="nx-email">@user.Email</span>
+                                </span>
+                                <span class="nx-cell nx-cell-pills">
                                     @foreach (var name in user.Roles)
                                     {
-                                        <span class="nx-pill">@name</span>
+                                        <span class="nx-pill nx-pill-role">@name</span>
                                     }
-                                </td>
-                                <td>
+                                </span>
+                                <span class="nx-cell">
                                     @if (user.LockedOut)
                                     {
                                         <span class="nx-pill nx-pill-warn">Locked</span>
                                     }
                                     else if (!user.EmailConfirmed)
                                     {
-                                        <span class="nx-pill">Unconfirmed</span>
+                                        <span class="nx-pill nx-pill-info">Unconfirmed</span>
                                     }
                                     else
                                     {
                                         <span class="nx-pill nx-pill-ok">Active</span>
                                     }
-                                </td>
-                            </tr>
+                                </span>
+                            </div>
                         }
-                    </tbody>
-                </table>
-
-                <div class="nx-pager">
-                    <button type="button" class="nx-icon-button" disabled="@(page <= 1)" aria-label="Previous page" @onclick="PreviousPage">
-                        <Icon Name="chevron-left" />
-                    </button>
-                    <span>Page @(page) of @pageCount</span>
-                    <button type="button" class="nx-icon-button" disabled="@(page >= pageCount)" aria-label="Next page" @onclick="NextPage">
-                        <Icon Name="chevron-right" />
-                    </button>
+                    </div>
+                    <div class="nx-list-foot">
+                        <button type="button" class="nx-icon-button" disabled="@(page <= 1)" aria-label="Previous page" @onclick="PreviousPage">
+                            <Icon Name="chevron-left" />
+                        </button>
+                        <span>Page @(page) of @pageCount</span>
+                        <button type="button" class="nx-icon-button" disabled="@(page >= pageCount)" aria-label="Next page" @onclick="NextPage">
+                            <Icon Name="chevron-right" />
+                        </button>
+                    </div>
                 </div>
             }
         </div>

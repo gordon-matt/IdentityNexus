@@ -91,6 +91,14 @@ public sealed class UserService(
                 return Result<UserDetail>.Invalid(Required("UserName", "A user name and email address are required."));
             }
 
+            string? currentId = await CurrentUserIdAsync();
+            if (string.Equals(currentId, request.Id, StringComparison.Ordinal)
+                && request.LockoutEnd is { } end
+                && end > DateTimeOffset.UtcNow)
+            {
+                return Result<UserDetail>.Conflict("You cannot lock the account you are signed in with.");
+            }
+
             var identity = await users.UpdateAsync(request, cancellationToken);
             if (!identity.Succeeded)
             {

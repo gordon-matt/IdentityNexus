@@ -25,6 +25,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\IdentityNexus.Services\IdentityNexus.Services.csproj" />
+		<ProjectReference Include="..\IdentityNexus\IdentityNexus.csproj" />
 	</ItemGroup>
 
 </Project>

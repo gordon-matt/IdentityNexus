@@ -8,7 +8,21 @@
         <button type="button" class="nx-icon-button nx-menu-button" aria-label="Toggle menu" @onclick="() => sidebarOpen = !sidebarOpen">
             <Icon Name="menu" />
         </button>
-        <a class="nx-brand" href="./">@Options.Value.Title</a>
+        <a class="nx-brand" href="./" aria-label="@Options.Value.Title">
+            @if (Branding.CustomLogoUrl(Options.Value) is { } logo)
+            {
+                <img class="nx-brand-custom" src="@logo" alt="" />
+            }
+            else if (Branding.HasCustomTitle(Options.Value))
+            {
+                <span>@Options.Value.Title</span>
+            }
+            else
+            {
+                <img class="nx-brand-logo" src="@EmbeddedAssets.Url("Logo.png")" alt="" width="161" height="36" />
+                <img class="nx-brand-icon" src="@EmbeddedAssets.Url("Icon.png")" alt="" width="32" height="32" />
+            }
+        </a>
         <div class="nx-topbar-actions">
             @if (!string.IsNullOrWhiteSpace(account))
             {

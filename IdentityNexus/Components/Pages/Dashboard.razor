@@ -22,19 +22,19 @@
     else
     {
         <div class="nx-stats">
-            <a class="nx-stat" href="users">
+            <a class="nx-stat nx-stat-users" href="users">
                 <span class="nx-stat-value">@overview.Users</span>
                 <span class="nx-stat-label">Users</span>
             </a>
-            <a class="nx-stat" href="roles">
+            <a class="nx-stat nx-stat-roles" href="roles">
                 <span class="nx-stat-value">@overview.Roles</span>
                 <span class="nx-stat-label">Roles</span>
             </a>
-            <a class="nx-stat" href="users?locked=1">
+            <a class="nx-stat nx-stat-locked" href="users?locked=1">
                 <span class="nx-stat-value">@overview.LockedOut</span>
                 <span class="nx-stat-label">Locked out</span>
             </a>
-            <a class="nx-stat" href="users?unconfirmed=1">
+            <a class="nx-stat nx-stat-mail" href="users?unconfirmed=1">
                 <span class="nx-stat-value">@overview.UnconfirmedEmail</span>
                 <span class="nx-stat-label">Email unconfirmed</span>
             </a>

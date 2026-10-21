@@ -12,7 +12,7 @@ so the host's password rules and token providers stay in force.
 - Create and edit users, including email, phone, confirmation flags and two-factor.
 - Assign roles, edit claims, set a password, remove an external login, reset an authenticator, and delete a user.
 - Create, rename and delete roles, including role claims.
-- The signed-in account cannot delete itself.
+- The signed-in account cannot delete itself or lock itself out.
 
 ## Add it to an existing site
 
@@ -41,6 +41,8 @@ app.MapIdentityNexus().RequireAuthorization();
 `ApplicationUser` must derive from `IdentityUser`, and `ApplicationRole` from `IdentityRole`, with a
 public parameterless constructor. Inferno's `ApplicationUser` and Mantle's user type both qualify.
 Browse to `/identity`.
+
+`Title` is the browser tab title. It is also the header text when it is not `IdentityNexus` and `LogoPath` is unset. `LogoPath` is a header image and takes precedence over `Title`. Use a root-relative path (`/logo.png`), an app-relative path (`~/logo.png`), or an absolute URL. With neither set, the built-in logo is shown.
 
 `MapIdentityNexus()` returns the route group, so secure it the same way as any other endpoint:
 

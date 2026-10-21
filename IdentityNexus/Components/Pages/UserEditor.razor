@@ -1,4 +1,6 @@
+@using System.Security.Claims
 @inject IUserService Users
+@inject AuthenticationStateProvider Authentication
 
 <aside class="nx-details">
     <header class="nx-details-header">
@@ -91,7 +93,11 @@
                 }
             }
 
-            @if (!IsNew)
+            @if (!IsNew && IsSelf)
+            {
+                <p class="nx-muted nx-small">You cannot lock the account you are signed in with.</p>
+            }
+            else if (!IsNew && identityKnown)
             {
                 <label class="nx-check">
                     <input type="checkbox" @bind="lockoutEnabled" />
@@ -109,6 +115,9 @@
                     </label>
                     <p class="nx-muted nx-small">Leave the time blank to keep the account locked.</p>
                 }
+            }
+            @if (!IsNew)
+            {
                 <label class="nx-check">
                     <input type="checkbox" @bind="twoFactor" />
                     Two-factor authentication
@@ -259,6 +268,17 @@
     private string claimTypeChoice = string.Empty;
     private string customClaimType = string.Empty;
     private string claimValue = string.Empty;
+    private string? currentUserId;
+    private bool identityKnown;
+
+    private bool IsSelf => !IsNew && User is not null && string.Equals(User.Id, currentUserId, StringComparison.Ordinal);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await Authentication.GetAuthenticationStateAsync();
+        currentUserId = state.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        identityKnown = true;
+    }
 
     protected override void OnParametersSet()
     {
@@ -404,7 +424,7 @@
 
     private bool TryReadLockout(out DateTimeOffset? end)
     {
-        if (!lockedOut)
+        if (IsSelf || !lockedOut)
         {
             end = null;
             return true;

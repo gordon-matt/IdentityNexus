@@ -9,6 +9,7 @@
     <meta name="robots" content="noindex" />
     <base href="@($"{Options.Value.BasePath}/")" />
     <title>@Options.Value.Title</title>
+    <link rel="icon" type="image/png" href="@EmbeddedAssets.Url("Icon.png")" />
     <link rel="stylesheet" href="@EmbeddedAssets.Url("identitynexus.css")" />
     <script src="@EmbeddedAssets.Url("theme.js")"></script>
 </head>
@@ -18,7 +19,18 @@
 
     <div id="nx-boot" class="nx-boot">
         <div class="nx-boot-panel">
-            <p class="nx-boot-title">@Options.Value.Title</p>
+            @if (Branding.CustomLogoUrl(Options.Value) is { } logo)
+            {
+                <img class="nx-boot-logo" src="@logo" alt="" />
+            }
+            else if (Branding.HasCustomTitle(Options.Value))
+            {
+                <p class="nx-boot-title">@Options.Value.Title</p>
+            }
+            else
+            {
+                <img class="nx-boot-logo" src="@EmbeddedAssets.Url("Logo.png")" alt="" width="323" height="72" />
+            }
             <div class="nx-spinner" role="status" aria-label="Loading"></div>
         </div>
     </div>
