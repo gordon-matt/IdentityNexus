@@ -1,21 +1,25 @@
 using System.Security.Claims;
+using IdentityNexus.Services.Tenancy;
 
 namespace IdentityNexus.Services.Roles;
 
-public sealed class IdentityRoleRepository<TRole>(RoleManager<TRole> roleManager) : IRoleRepository
+internal sealed class IdentityRoleRepository<TRole>(
+    RoleManager<TRole> roleManager,
+    IServiceProvider services,
+    IEnumerable<ITenantRule<TRole>> tenants) : IRoleRepository
     where TRole : IdentityRole, new()
 {
     public Task<int> CountAsync(CancellationToken cancellationToken = default)
     {
         EnsureQueryable();
-        return roleManager.Roles.CountAsync(cancellationToken);
+        return ScopedRoles().CountAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<RoleSummary>> ListAsync(CancellationToken cancellationToken = default)
     {
         EnsureQueryable();
 
-        var roles = await roleManager.Roles
+        var roles = await ScopedRoles()
             .OrderBy(role => role.Name)
             .ToListAsync(cancellationToken);
 
@@ -30,7 +34,7 @@ public sealed class IdentityRoleRepository<TRole>(RoleManager<TRole> roleManager
 
     public async Task<RoleSummary?> FindAsync(string id, CancellationToken cancellationToken = default)
     {
-        var role = await roleManager.FindByIdAsync(id);
+        var role = await FindInTenantAsync(id);
         return role is null ? null : await ToSummaryAsync(role);
     }
 
@@ -40,6 +44,7 @@ public sealed class IdentityRoleRepository<TRole>(RoleManager<TRole> roleManager
         CancellationToken cancellationToken = default)
     {
         var role = new TRole { Name = name.Trim() };
+        Stamp(role);
         var created = await roleManager.CreateAsync(role);
         if (!created.Succeeded)
         {
@@ -56,7 +61,7 @@ public sealed class IdentityRoleRepository<TRole>(RoleManager<TRole> roleManager
         IReadOnlyList<UserClaim> claims,
         CancellationToken cancellationToken = default)
     {
-        var role = await roleManager.FindByIdAsync(id);
+        var role = await FindInTenantAsync(id);
         if (role is null)
         {
             return Missing();
@@ -74,8 +79,25 @@ public sealed class IdentityRoleRepository<TRole>(RoleManager<TRole> roleManager
 
     public async Task<IdentityResult> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        var role = await roleManager.FindByIdAsync(id);
+        var role = await FindInTenantAsync(id);
         return role is null ? Missing() : await roleManager.DeleteAsync(role);
+    }
+
+    private IQueryable<TRole> ScopedRoles() =>
+        tenants.Aggregate(roleManager.Roles, (query, rule) => rule.Apply(query, services));
+
+    private void Stamp(TRole role)
+    {
+        foreach (var rule in tenants)
+        {
+            rule.Assign(role, services);
+        }
+    }
+
+    private async Task<TRole?> FindInTenantAsync(string id)
+    {
+        var role = await roleManager.FindByIdAsync(id);
+        return role is null || !tenants.All(rule => rule.Matches(role, services)) ? null : role;
     }
 
     private async Task<RoleSummary> ToSummaryAsync(TRole role)

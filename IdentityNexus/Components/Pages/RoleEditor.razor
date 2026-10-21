@@ -5,7 +5,7 @@
         <div>
             <h2>@(IsNew ? "New role" : name)</h2>
         </div>
-        <button type="button" class="nx-icon-button" aria-label="Close" @onclick="OnClose">
+        <button type="button" class="nf-icon-button" aria-label="Close" @onclick="OnClose">
             <Icon Name="x" />
         </button>
     </header>
@@ -23,13 +23,13 @@
     <div class="nx-form">
         <label class="nx-field">
             <span>Name</span>
-            <input class="nx-input" @bind="name" />
+            <input class="nf-input" @bind="name" />
         </label>
 
         <h3>Claims</h3>
         @if (claims.Count == 0)
         {
-            <p class="nx-muted">No claims on this role.</p>
+            <p class="nf-muted">No claims on this role.</p>
         }
         else
         {
@@ -39,9 +39,9 @@
                     <li>
                         <span>
                             <strong>@ClaimTypeCatalog.DisplayName(claim.Type)</strong>
-                            <span class="nx-muted nx-small">@claim.Value</span>
+                            <span class="nf-muted nf-small">@claim.Value</span>
                         </span>
-                        <button type="button" class="nx-icon-button" aria-label="Remove claim" @onclick="() => claims.Remove(claim)">
+                        <button type="button" class="nf-icon-button" aria-label="Remove claim" @onclick="() => claims.Remove(claim)">
                             <Icon Name="x" />
                         </button>
                     </li>
@@ -51,7 +51,7 @@
 
         <label class="nx-field">
             <span>Type</span>
-            <select class="nx-input" @bind="claimTypeChoice">
+            <select class="nf-input" @bind="claimTypeChoice">
                 <option value="">Choose a type</option>
                 @foreach (var option in ClaimTypeCatalog.All)
                 {
@@ -64,23 +64,23 @@
         {
             <label class="nx-field">
                 <span>Custom type</span>
-                <input class="nx-input" @bind="customClaimType" />
+                <input class="nf-input" @bind="customClaimType" />
             </label>
         }
         <label class="nx-field">
             <span>Value</span>
-            <input class="nx-input" @bind="claimValue" />
+            <input class="nf-input" @bind="claimValue" />
         </label>
-        <button type="button" class="nx-button" @onclick="AddClaim">Add claim</button>
+        <button type="button" class="nf-button" @onclick="AddClaim">Add claim</button>
     </div>
 
     <footer class="nx-details-footer">
         @if (!IsNew)
         {
-            <button type="button" class="nx-button nx-button-danger" disabled="@busy" @onclick="DeleteAsync">Delete</button>
+            <button type="button" class="nf-button nf-button-danger" disabled="@busy" @onclick="DeleteAsync">Delete</button>
         }
-        <button type="button" class="nx-button" @onclick="OnClose">Cancel</button>
-        <button type="button" class="nx-button nx-button-primary" disabled="@busy" @onclick="SaveAsync">
+        <button type="button" class="nf-button" @onclick="OnClose">Cancel</button>
+        <button type="button" class="nf-button nf-button-primary" disabled="@busy" @onclick="SaveAsync">
             @(IsNew ? "Create" : "Save")
         </button>
     </footer>

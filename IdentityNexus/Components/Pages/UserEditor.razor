@@ -8,10 +8,10 @@
             <h2>@(IsNew ? "New user" : (userName.Length == 0 ? "User" : userName))</h2>
             @if (!IsNew && User is not null)
             {
-                <p class="nx-muted nx-small">@User.Id</p>
+                <p class="nf-muted nf-small">@User.Id</p>
             }
         </div>
-        <button type="button" class="nx-icon-button" aria-label="Close" @onclick="OnClose">
+        <button type="button" class="nf-icon-button" aria-label="Close" @onclick="OnClose">
             <Icon Name="x" />
         </button>
     </header>
@@ -41,11 +41,11 @@
         <div class="nx-form">
             <label class="nx-field">
                 <span>User name</span>
-                <input class="nx-input" @bind="userName" autocomplete="off" />
+                <input class="nf-input" @bind="userName" autocomplete="off" />
             </label>
             <label class="nx-field">
                 <span>Email</span>
-                <input class="nx-input" type="email" @bind="email" autocomplete="off" />
+                <input class="nf-input" type="email" @bind="email" autocomplete="off" />
             </label>
             <label class="nx-check">
                 <input type="checkbox" @bind="emailConfirmed" disabled="@IsNew" />
@@ -53,7 +53,7 @@
             </label>
             <label class="nx-field">
                 <span>Phone</span>
-                <input class="nx-input" @bind="phone" autocomplete="off" />
+                <input class="nf-input" @bind="phone" autocomplete="off" />
             </label>
             @if (!IsNew)
             {
@@ -66,11 +66,11 @@
             {
                 <label class="nx-field">
                     <span>Password</span>
-                    <input class="nx-input" type="password" @bind="password" autocomplete="new-password" />
+                    <input class="nf-input" type="password" @bind="password" autocomplete="new-password" />
                 </label>
                 <label class="nx-field">
                     <span>Confirm password</span>
-                    <input class="nx-input" type="password" @bind="confirmPassword" autocomplete="new-password" />
+                    <input class="nf-input" type="password" @bind="confirmPassword" autocomplete="new-password" />
                 </label>
             }
         </div>
@@ -80,7 +80,7 @@
         <div class="nx-form">
             @if (Roles.Count == 0)
             {
-                <p class="nx-muted">No roles yet. Create one from the Roles page, then come back.</p>
+                <p class="nf-muted">No roles yet. Create one from the Roles page, then come back.</p>
             }
             else
             {
@@ -95,7 +95,7 @@
 
             @if (!IsNew && IsSelf)
             {
-                <p class="nx-muted nx-small">You cannot lock the account you are signed in with.</p>
+                <p class="nf-muted nf-small">You cannot lock the account you are signed in with.</p>
             }
             else if (!IsNew && identityKnown)
             {
@@ -111,9 +111,9 @@
                 {
                     <label class="nx-field">
                         <span>Until (UTC)</span>
-                        <input class="nx-input" type="datetime-local" @bind="lockoutUntil" />
+                        <input class="nf-input" type="datetime-local" @bind="lockoutUntil" />
                     </label>
-                    <p class="nx-muted nx-small">Leave the time blank to keep the account locked.</p>
+                    <p class="nf-muted nf-small">Leave the time blank to keep the account locked.</p>
                 }
             }
             @if (!IsNew)
@@ -124,7 +124,7 @@
                 </label>
                 @if (User is not null && User.AccessFailedCount > 0)
                 {
-                    <p class="nx-muted nx-small">@User.AccessFailedCount failed sign-in @(User.AccessFailedCount == 1 ? "attempt" : "attempts"). Clearing the lockout resets the count.</p>
+                    <p class="nf-muted nf-small">@User.AccessFailedCount failed sign-in @(User.AccessFailedCount == 1 ? "attempt" : "attempts"). Clearing the lockout resets the count.</p>
                 }
             }
         </div>
@@ -134,7 +134,7 @@
         <div class="nx-form">
             @if (claims.Count == 0)
             {
-                <p class="nx-muted">No claims on this account.</p>
+                <p class="nf-muted">No claims on this account.</p>
             }
             else
             {
@@ -144,9 +144,9 @@
                         <li>
                             <span>
                                 <strong>@ClaimTypeCatalog.DisplayName(claim.Type)</strong>
-                                <span class="nx-muted nx-small">@claim.Value</span>
+                                <span class="nf-muted nf-small">@claim.Value</span>
                             </span>
-                            <button type="button" class="nx-icon-button" aria-label="Remove claim" @onclick="() => claims.Remove(claim)">
+                            <button type="button" class="nf-icon-button" aria-label="Remove claim" @onclick="() => claims.Remove(claim)">
                                 <Icon Name="x" />
                             </button>
                         </li>
@@ -156,7 +156,7 @@
 
             <label class="nx-field">
                 <span>Type</span>
-                <select class="nx-input" @bind="claimTypeChoice">
+                <select class="nf-input" @bind="claimTypeChoice">
                     <option value="">Choose a type</option>
                     @foreach (var option in ClaimTypeCatalog.All)
                     {
@@ -169,14 +169,14 @@
             {
                 <label class="nx-field">
                     <span>Custom type</span>
-                    <input class="nx-input" @bind="customClaimType" />
+                    <input class="nf-input" @bind="customClaimType" />
                 </label>
             }
             <label class="nx-field">
                 <span>Value</span>
-                <input class="nx-input" @bind="claimValue" />
+                <input class="nf-input" @bind="claimValue" />
             </label>
-            <button type="button" class="nx-button" @onclick="AddClaim">Add claim</button>
+            <button type="button" class="nf-button" @onclick="AddClaim">Add claim</button>
         </div>
     }
     else if (tab == 3 && !IsNew)
@@ -184,18 +184,18 @@
         <div class="nx-form">
             <label class="nx-field">
                 <span>New password</span>
-                <input class="nx-input" type="password" @bind="password" autocomplete="new-password" />
+                <input class="nf-input" type="password" @bind="password" autocomplete="new-password" />
             </label>
             <label class="nx-field">
                 <span>Confirm password</span>
-                <input class="nx-input" type="password" @bind="confirmPassword" autocomplete="new-password" />
+                <input class="nf-input" type="password" @bind="confirmPassword" autocomplete="new-password" />
             </label>
-            <button type="button" class="nx-button" disabled="@busy" @onclick="SetPasswordAsync">Set password</button>
+            <button type="button" class="nf-button" disabled="@busy" @onclick="SetPasswordAsync">Set password</button>
 
             <h3>External logins</h3>
             @if (logins.Count == 0)
             {
-                <p class="nx-muted">None linked.</p>
+                <p class="nf-muted">None linked.</p>
             }
             else
             {
@@ -205,9 +205,9 @@
                         <li>
                             <span>
                                 <strong>@(login.ProviderDisplayName ?? login.LoginProvider)</strong>
-                                <span class="nx-muted nx-small">@login.ProviderKey</span>
+                                <span class="nf-muted nf-small">@login.ProviderKey</span>
                             </span>
-                            <button type="button" class="nx-icon-button" aria-label="Remove login" @onclick="() => RemoveLoginAsync(login)">
+                            <button type="button" class="nf-icon-button" aria-label="Remove login" @onclick="() => RemoveLoginAsync(login)">
                                 <Icon Name="x" />
                             </button>
                         </li>
@@ -215,16 +215,16 @@
                 </ul>
             }
 
-            <button type="button" class="nx-button" disabled="@busy" @onclick="ResetAuthenticatorAsync">Reset authenticator</button>
-            <button type="button" class="nx-button nx-button-danger" disabled="@busy" @onclick="DeleteAsync">Delete user</button>
+            <button type="button" class="nf-button" disabled="@busy" @onclick="ResetAuthenticatorAsync">Reset authenticator</button>
+            <button type="button" class="nf-button nf-button-danger" disabled="@busy" @onclick="DeleteAsync">Delete user</button>
         </div>
     }
 
     <footer class="nx-details-footer">
-        <button type="button" class="nx-button" @onclick="OnClose">Cancel</button>
+        <button type="button" class="nf-button" @onclick="OnClose">Cancel</button>
         @if (tab != 3)
         {
-            <button type="button" class="nx-button nx-button-primary" disabled="@busy" @onclick="SaveAsync">
+            <button type="button" class="nf-button nf-button-primary" disabled="@busy" @onclick="SaveAsync">
                 @(IsNew ? "Create" : "Save")
             </button>
         }

@@ -27,6 +27,7 @@ builder.Services
 
 builder.Services.AddIdentityNexus<ApplicationUser, ApplicationRole>(options =>
 {
+    options.HomePath = "/";
     options.LogoutPath = "/account/logout";
 });
 
@@ -44,14 +45,35 @@ Browse to `/identity`.
 
 `Title` is the browser tab title. It is also the header text when it is not `IdentityNexus` and `LogoPath` is unset. `LogoPath` is a header image and takes precedence over `Title`. Use a root-relative path (`/logo.png`), an app-relative path (`~/logo.png`), or an absolute URL. With neither set, the built-in logo is shown.
 
+`HomePath` adds a top-bar link back to the host site. `LogoutPath` adds the sign-out button. Set either, both, or neither. A relative home path is rooted so the UI's `<base href>` does not keep the link inside `/identity`.
+
+## Tenants
+
+A host that stores a tenant id on its user or role type can scope the UI to the current tenant. Call either method, or both. The selector is the property on the Identity type. The callback runs on each query, including inside the Blazor circuit, and returns `TenantKey<TKey>.None` when this request has no tenant. A value limits lists and lookups to that tenant and is written onto users or roles that IdentityNexus creates. An id from another tenant is treated as missing.
+
+`TenantKey.OfNullable` accepts an `int?`, `Guid?`, or any other nullable value type. A reference-type id uses `TenantKey<string>.Of(id)` and `TenantKey<string>.None`.
+
+```csharp
+builder.Services.ScopeUsersToTenant<ApplicationUser, int?>(
+    user => user.TenantId,
+    services => TenantKey.OfNullable(services.GetRequiredService<AppTenant>().Id));
+
+builder.Services.ScopeRolesToTenant<ApplicationRole, int?>(
+    role => role.TenantId,
+    services => TenantKey.OfNullable(services.GetRequiredService<AppTenant>().Id));
+```
+
 `MapIdentityNexus()` returns the route group, so secure it the same way as any other endpoint:
 
 ```csharp
 app.MapIdentityNexus().RequireAuthorization("Administrators");
 ```
 
-The UI is a separate Blazor circuit mounted at the base path, with its own stylesheet, so it does
-not pick up the host's CSS. Call `UseAuthentication` and `UseAuthorization` before `MapIdentityNexus`.
+The UI is a separate Blazor circuit mounted at the base path. It uses the NetForge shell and the
+host's `ForgeUiOptions.ThemeStorageKey`, so a theme change here follows the rest of the site.
+`IdentityNexusOptions.Area` pins that theme when the UI is the back office (for example `Admin`)
+even though it is mounted at `/identity` rather than `/Admin`. Leave `Area` unset to share the
+public theme. Call `UseAuthentication` and `UseAuthorization` before `MapIdentityNexus`.
 A host with no `.razor` files of its own still receives `blazor.web.js` when IdentityNexus is
 installed as a package. A project reference should import `build/IdentityNexus.props`, which the
 demo does.

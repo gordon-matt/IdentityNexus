@@ -11,20 +11,20 @@
     <header class="nx-page-header">
         <div>
             <h1>Users</h1>
-            <p class="nx-muted">@total.ToString("N0") @(total == 1 ? "account" : "accounts")</p>
+            <p class="nf-muted">@total.ToString("N0") @(total == 1 ? "account" : "accounts")</p>
         </div>
-        <button type="button" class="nx-button nx-button-primary" @onclick="() => OpenAsync(null)">
+        <button type="button" class="nf-button nf-button-primary" @onclick="() => OpenAsync(null)">
             <Icon Name="plus" />
             New user
         </button>
     </header>
 
     <div class="nx-toolbar">
-        <label class="nx-search">
-            <Icon Name="search" Class="nx-search-icon" />
-            <input class="nx-search-input" type="search" placeholder="Search name, email or phone" @bind="search" @bind:event="oninput" @bind:after="QueueSearch" />
+        <label class="nf-search">
+            <Icon Name="search" />
+            <input type="search" placeholder="Search name, email or phone" @bind="search" @bind:event="oninput" @bind:after="QueueSearch" />
         </label>
-        <select class="nx-input nx-select" @bind="role" @bind:after="ReloadFirstPage">
+        <select class="nf-select" @bind="role" @bind:after="ReloadFirstPage">
             <option value="">All roles</option>
             @foreach (var item in roleOptions)
             {
@@ -57,7 +57,7 @@
             {
                 <div class="nx-empty">
                     <h2>No users match</h2>
-                    <p class="nx-muted">Try a different search, or create the first account.</p>
+                    <p class="nf-muted">Try a different search, or create the first account.</p>
                 </div>
             }
             else
@@ -80,32 +80,32 @@
                                 <span class="nx-cell nx-cell-pills">
                                     @foreach (var name in user.Roles)
                                     {
-                                        <span class="nx-pill nx-pill-role">@name</span>
+                                        <span class="nf-badge nf-badge-accent">@name</span>
                                     }
                                 </span>
                                 <span class="nx-cell">
                                     @if (user.LockedOut)
                                     {
-                                        <span class="nx-pill nx-pill-warn">Locked</span>
+                                        <span class="nf-badge nf-badge-warning">Locked</span>
                                     }
                                     else if (!user.EmailConfirmed)
                                     {
-                                        <span class="nx-pill nx-pill-info">Unconfirmed</span>
+                                        <span class="nf-badge nf-badge-info">Unconfirmed</span>
                                     }
                                     else
                                     {
-                                        <span class="nx-pill nx-pill-ok">Active</span>
+                                        <span class="nf-badge nf-badge-success">Active</span>
                                     }
                                 </span>
                             </div>
                         }
                     </div>
                     <div class="nx-list-foot">
-                        <button type="button" class="nx-icon-button" disabled="@(page <= 1)" aria-label="Previous page" @onclick="PreviousPage">
+                        <button type="button" class="nf-icon-button" disabled="@(page <= 1)" aria-label="Previous page" @onclick="PreviousPage">
                             <Icon Name="chevron-left" />
                         </button>
                         <span>Page @(page) of @pageCount</span>
-                        <button type="button" class="nx-icon-button" disabled="@(page >= pageCount)" aria-label="Next page" @onclick="NextPage">
+                        <button type="button" class="nf-icon-button" disabled="@(page >= pageCount)" aria-label="Next page" @onclick="NextPage">
                             <Icon Name="chevron-right" />
                         </button>
                     </div>

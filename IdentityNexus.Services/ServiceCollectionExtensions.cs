@@ -20,7 +20,11 @@ public static class ServiceCollectionExtensions
         {
             services.AddOptions<IdentityNexusOptions>()
                 .Configure(options => configure?.Invoke(options))
-                .PostConfigure(options => options.BasePath = NormalizeBasePath(options.BasePath));
+                .PostConfigure(options =>
+                {
+                    options.BasePath = NormalizeBasePath(options.BasePath);
+                    options.HomePath = NormalizeHomePath(options.HomePath);
+                });
 
             services.TryAddScoped<AuthenticationStateProvider, AnonymousAuthenticationStateProvider>();
             services.TryAddScoped<IUserRepository, IdentityUserRepository<TUser>>();
@@ -36,5 +40,27 @@ public static class ServiceCollectionExtensions
     {
         string trimmed = (basePath ?? string.Empty).Trim().Trim('/');
         return trimmed.Length == 0 ? "/identity" : "/" + trimmed;
+    }
+
+    private static string? NormalizeHomePath(string? path)
+    {
+        path = path?.Trim();
+        if (string.IsNullOrEmpty(path))
+        {
+            return null;
+        }
+
+        // The UI's <base href> is its mount path, so a relative URL would stay inside IdentityNexus.
+        if (path.StartsWith("~/", StringComparison.Ordinal))
+        {
+            path = path[1..];
+        }
+
+        if (path.StartsWith('/') || Uri.TryCreate(path, UriKind.Absolute, out _))
+        {
+            return path;
+        }
+
+        return "/" + path;
     }
 }

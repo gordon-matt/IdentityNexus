@@ -1,6 +1,11 @@
+using IdentityNexus.Services.Tenancy;
+
 namespace IdentityNexus.Services.Users;
 
-public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager) : IUserRepository
+internal sealed class IdentityUserRepository<TUser>(
+    UserManager<TUser> userManager,
+    IServiceProvider services,
+    IEnumerable<ITenantRule<TUser>> tenants) : IUserRepository
     where TUser : IdentityUser, new()
 {
     public async Task<(int Users, int LockedOut, int UnconfirmedEmail)> CountAsync(CancellationToken cancellationToken = default)
@@ -8,9 +13,9 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
         EnsureQueryable();
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        int users = await userManager.Users.CountAsync(cancellationToken);
+        int users = await ScopedUsers().CountAsync(cancellationToken);
         int lockedOut = (await LockedIdsAsync(now, cancellationToken)).Count;
-        int unconfirmed = await userManager.Users.CountAsync(user => !user.EmailConfirmed, cancellationToken);
+        int unconfirmed = await ScopedUsers().CountAsync(user => !user.EmailConfirmed, cancellationToken);
 
         return (users, lockedOut, unconfirmed);
     }
@@ -19,12 +24,12 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
     {
         EnsureQueryable();
 
-        IQueryable<TUser> users = userManager.Users;
+        IQueryable<TUser> users = ScopedUsers();
 
         if (!string.IsNullOrWhiteSpace(query.Role))
         {
             var inRole = await userManager.GetUsersInRoleAsync(query.Role.Trim());
-            var ids = inRole.Select(user => user.Id).ToHashSet(StringComparer.Ordinal);
+            var ids = inRole.Where(InTenant).Select(user => user.Id).ToHashSet(StringComparer.Ordinal);
             users = users.Where(user => ids.Contains(user.Id));
         }
 
@@ -71,7 +76,7 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
 
     public async Task<UserDetail?> FindAsync(string id, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(id);
+        var user = await FindInTenantAsync(id);
         return user is null ? null : await ToDetailAsync(user);
     }
 
@@ -82,6 +87,7 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
             UserName = request.UserName.Trim(),
             Email = request.Email.Trim(),
         };
+        Stamp(user);
 
         var created = await userManager.CreateAsync(user, request.Password);
         if (!created.Succeeded)
@@ -113,7 +119,7 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
 
     public async Task<IdentityResult> UpdateAsync(UpdateUserRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(request.Id);
+        var user = await FindInTenantAsync(request.Id);
         if (user is null)
         {
             return Missing();
@@ -184,7 +190,7 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
 
     public async Task<IdentityResult> SetPasswordAsync(string id, string password, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(id);
+        var user = await FindInTenantAsync(id);
         if (user is null)
         {
             return Missing();
@@ -204,7 +210,7 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
 
     public async Task<IdentityResult> RemoveLoginAsync(string id, string loginProvider, string providerKey, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(id);
+        var user = await FindInTenantAsync(id);
         return user is null
             ? Missing()
             : await userManager.RemoveLoginAsync(user, loginProvider, providerKey);
@@ -212,7 +218,7 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
 
     public async Task<IdentityResult> ResetAuthenticatorAsync(string id, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(id);
+        var user = await FindInTenantAsync(id);
         if (user is null)
         {
             return Missing();
@@ -226,7 +232,7 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
 
     public async Task<IdentityResult> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(id);
+        var user = await FindInTenantAsync(id);
         return user is null ? Missing() : await userManager.DeleteAsync(user);
     }
 
@@ -327,7 +333,7 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
     {
         // DateTimeOffset comparisons do not translate on every provider (SQLite in particular),
         // so the cutoff is applied in memory to the rows that actually have a lockout end.
-        var rows = await userManager.Users
+        var rows = await ScopedUsers()
             .Where(user => user.LockoutEnd != null)
             .Select(user => new { user.Id, user.LockoutEnd })
             .ToListAsync(cancellationToken);
@@ -336,6 +342,25 @@ public sealed class IdentityUserRepository<TUser>(UserManager<TUser> userManager
             .Where(user => user.LockoutEnd > now)
             .Select(user => user.Id)
             .ToList();
+    }
+
+    private IQueryable<TUser> ScopedUsers() =>
+        tenants.Aggregate(userManager.Users, (query, rule) => rule.Apply(query, services));
+
+    private bool InTenant(TUser user) => tenants.All(rule => rule.Matches(user, services));
+
+    private void Stamp(TUser user)
+    {
+        foreach (var rule in tenants)
+        {
+            rule.Assign(user, services);
+        }
+    }
+
+    private async Task<TUser?> FindInTenantAsync(string id)
+    {
+        var user = await userManager.FindByIdAsync(id);
+        return user is null || !InTenant(user) ? null : user;
     }
 
     private void EnsureQueryable()

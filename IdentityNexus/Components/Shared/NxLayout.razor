@@ -3,73 +3,63 @@
 @inject AuthenticationStateProvider Authentication
 @inject IJSRuntime JS
 
-<div class="nx-app @(sidebarOpen ? "nx-sidebar-open" : null)">
-    <header class="nx-topbar">
-        <button type="button" class="nx-icon-button nx-menu-button" aria-label="Toggle menu" @onclick="() => sidebarOpen = !sidebarOpen">
-            <Icon Name="menu" />
-        </button>
-        <a class="nx-brand" href="./" aria-label="@Options.Value.Title">
-            @if (Branding.CustomLogoUrl(Options.Value) is { } logo)
-            {
-                <img class="nx-brand-custom" src="@logo" alt="" />
-            }
-            else if (Branding.HasCustomTitle(Options.Value))
-            {
-                <span>@Options.Value.Title</span>
-            }
-            else
-            {
-                <img class="nx-brand-logo" src="@EmbeddedAssets.Url("Logo.png")" alt="" width="161" height="36" />
-                <img class="nx-brand-icon" src="@EmbeddedAssets.Url("Icon.png")" alt="" width="32" height="32" />
-            }
-        </a>
-        <div class="nx-topbar-actions">
-            @if (!string.IsNullOrWhiteSpace(account))
-            {
-                <span class="nx-account" title="@account">@account</span>
-            }
-            <button type="button" class="nx-icon-button" title="@(theme == "dark" ? "Light theme" : "Dark theme")" @onclick="ToggleThemeAsync">
-                <Icon Name="@(theme == "dark" ? "sun" : "moon")" />
-            </button>
-            @if (!string.IsNullOrWhiteSpace(Options.Value.LogoutPath))
-            {
-                <form method="post" action="@Options.Value.LogoutPath" data-enhance="false">
-                    <button type="submit" class="nx-icon-button" title="Sign out">
-                        <Icon Name="log-out" />
-                    </button>
-                </form>
-            }
-        </div>
-    </header>
-
-    <div class="nx-scrim" @onclick="() => sidebarOpen = false"></div>
-
-    <aside class="nx-sidebar">
-        <nav class="nx-nav" aria-label="Identity">
-            <NavLink class="nx-nav-link" href="./" Match="NavLinkMatch.All" @onclick="CloseMenu">
-                <Icon Name="layout" />
-                <span>Overview</span>
-            </NavLink>
-            <NavLink class="nx-nav-link" href="users" @onclick="CloseMenu">
-                <Icon Name="users" />
-                <span>Users</span>
-            </NavLink>
-            <NavLink class="nx-nav-link" href="roles" @onclick="CloseMenu">
-                <Icon Name="shield" />
-                <span>Roles</span>
-            </NavLink>
-        </nav>
-    </aside>
-
-    <main class="nx-main">
+<AppShell Brand="@Options.Value.Title"
+          BrandHref="./"
+          LogoUrl="@LogoUrl"
+          MarkUrl="@MarkUrl"
+          Sections="@Sections"
+          ShowSearch="false"
+          ShowThemePicker="true"
+          ShowUserMenu="false"
+          ShowVersion="false">
+    <TopbarEnd>
+        @if (!string.IsNullOrWhiteSpace(account))
+        {
+            <span class="nx-account" title="@account">@account</span>
+        }
+        @if (!string.IsNullOrWhiteSpace(Options.Value.HomePath))
+        {
+            <a class="nf-icon-button" href="@Options.Value.HomePath" title="Back to the site" data-enhance="false">
+                <Icon Name="arrow-left" />
+            </a>
+        }
+        @if (!string.IsNullOrWhiteSpace(Options.Value.LogoutPath))
+        {
+            <form method="post" action="@Options.Value.LogoutPath" data-enhance="false">
+                <button type="submit" class="nf-icon-button" title="Sign out">
+                    <Icon Name="logout" />
+                </button>
+            </form>
+        }
+    </TopbarEnd>
+    <ChildContent>
         @Body
-    </main>
-</div>
+    </ChildContent>
+</AppShell>
 
 @code {
-    private bool sidebarOpen;
+    private static readonly IReadOnlyList<ForgeNavSection> Sections =
+    [
+        new()
+        {
+            Items =
+            [
+                new ForgeNavItem { Title = "Overview", Href = "./", Icon = "layout", MatchAll = true },
+                new ForgeNavItem { Title = "Users", Href = "users", Icon = "users" },
+                new ForgeNavItem { Title = "Roles", Href = "roles", Icon = "shield" },
+            ],
+        },
+    ];
+
     private string? account;
-    private string theme = "light";
+
+    private bool UseBuiltInLogo =>
+        Branding.CustomLogoUrl(Options.Value) is null && !Branding.HasCustomTitle(Options.Value);
+
+    private string? LogoUrl => Branding.CustomLogoUrl(Options.Value)
+        ?? (UseBuiltInLogo ? EmbeddedAssets.Url("Logo.png") : null);
+
+    private string? MarkUrl => UseBuiltInLogo ? EmbeddedAssets.Url("Icon.png") : null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -81,15 +71,7 @@
     {
         if (firstRender)
         {
-            theme = await JS.InvokeAsync<string>("identityNexus.theme");
             await JS.InvokeVoidAsync("identityNexus.ready");
         }
     }
-
-    private async Task ToggleThemeAsync()
-    {
-        theme = await JS.InvokeAsync<string>("identityNexus.toggleTheme");
-    }
-
-    private void CloseMenu() => sidebarOpen = false;
 }
