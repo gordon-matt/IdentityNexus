@@ -7,6 +7,14 @@ IdentityNexus does not create its own user tables and does not replace `UserMana
 
 Users and roles use string keys. Passwords, security stamps, lockout and role assignment all go through the host's Identity managers, so the host's password rules and token providers stay in force.
 
+## Screenshots
+
+<img src="https://github.com/gordon-matt/IdentityNexus/blob/master/_Misc/Screenshots/Home.png" alt="Home Page" />
+
+<img src="https://github.com/gordon-matt/IdentityNexus/blob/master/_Misc/Screenshots/Users.png" alt="Users Page" />
+
+<img src="https://github.com/gordon-matt/IdentityNexus/blob/master/_Misc/Screenshots/Roles.png" alt="Roles Page" />
+
 ## What you can do
 
 - Search and page users, and filter by role, lockout or an unconfirmed email.
