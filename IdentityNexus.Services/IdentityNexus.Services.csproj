@@ -19,7 +19,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Ardalis.Result" Version="10.1.0" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
 	</ItemGroup>
 
 </Project>

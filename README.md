@@ -1,10 +1,11 @@
+<img src="https://github.com/gordon-matt/IdentityNexus/blob/master/_Misc/Logo.png" alt="Logo" width="350" />
+
 A Blazor management UI for the ASP.NET Core Identity users and roles an application already has.
-Drop it into Mantle, Inferno, or any other site that uses Identity with an Entity Framework store.
+Drop it into any site that uses Identity with an Entity Framework store.
+
 IdentityNexus does not create its own user tables and does not replace `UserManager` or `RoleManager`.
 
-Users and roles use string keys, which is the Identity default and what Mantle and Inferno use.
-Passwords, security stamps, lockout and role assignment all go through the host's Identity managers,
-so the host's password rules and token providers stay in force.
+Users and roles use string keys. Passwords, security stamps, lockout and role assignment all go through the host's Identity managers, so the host's password rules and token providers stay in force.
 
 ## What you can do
 
@@ -40,8 +41,7 @@ app.MapIdentityNexus().RequireAuthorization();
 ```
 
 `ApplicationUser` must derive from `IdentityUser`, and `ApplicationRole` from `IdentityRole`, with a
-public parameterless constructor. Inferno's `ApplicationUser` and Mantle's user type both qualify.
-Browse to `/identity`.
+public parameterless constructor. Browse to `/identity`.
 
 `Title` is the browser tab title. It is also the header text when it is not `IdentityNexus` and `LogoPath` is unset. `LogoPath` is a header image and takes precedence over `Title`. Use a root-relative path (`/logo.png`), an app-relative path (`~/logo.png`), or an absolute URL. With neither set, the built-in logo is shown.
 
