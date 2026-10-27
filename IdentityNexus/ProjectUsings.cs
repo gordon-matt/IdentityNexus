@@ -1,9 +1,5 @@
 global using IdentityNexus.Infrastructure;
 global using IdentityNexus.Services;
-global using IdentityNexus.Services.Claims;
-global using IdentityNexus.Services.Models;
-global using IdentityNexus.Services.Roles;
-global using IdentityNexus.Services.Users;
 global using Microsoft.AspNetCore.Builder;
 global using Microsoft.AspNetCore.Components.Authorization;
 global using Microsoft.AspNetCore.Http;

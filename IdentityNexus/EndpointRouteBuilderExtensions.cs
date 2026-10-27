@@ -1,5 +1,4 @@
 using IdentityNexus.Components;
-using IdentityNexus.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Routing;
 

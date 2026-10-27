@@ -1,8 +1,3 @@
-using IdentityNexus.Demo;
-using IdentityNexus;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-
 var builder = WebApplication.CreateBuilder(args);
 
 string provider = builder.Configuration["Database:Provider"] ?? "Sqlite";

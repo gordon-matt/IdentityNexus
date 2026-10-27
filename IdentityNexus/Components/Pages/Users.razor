@@ -20,10 +20,7 @@
     </header>
 
     <div class="nx-toolbar">
-        <label class="nf-search">
-            <Icon Name="search" />
-            <input type="search" placeholder="Search name, email or phone" @bind="search" @bind:event="oninput" @bind:after="QueueSearch" />
-        </label>
+        <SearchField @bind-Value="search" @bind-Value:after="QueueSearch" Placeholder="Search name, email or phone" />
         <select class="nf-select" @bind="role" @bind:after="ReloadFirstPage">
             <option value="">All roles</option>
             @foreach (var item in roleOptions)
