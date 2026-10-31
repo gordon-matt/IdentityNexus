@@ -51,7 +51,7 @@ app.MapIdentityNexus().RequireAuthorization();
 `ApplicationUser` must derive from `IdentityUser`, and `ApplicationRole` from `IdentityRole`, with a
 public parameterless constructor. Browse to `/identity`.
 
-`Title` is the browser tab title. It is also the header text when it is not `IdentityNexus` and `LogoPath` is unset. `LogoPath` is a header image and takes precedence over `Title`. Use a root-relative path (`/logo.png`), an app-relative path (`~/logo.png`), or an absolute URL. With neither set, the built-in logo is shown.
+`Title` is the browser tab title. The header logo and name come from the host's `ForgeShellOptions` (`LogoUrl`, `LogoDarkUrl`, `MarkUrl`, `Brand`), the same branding as the rest of the site. With none set, the built-in logo is shown.
 
 `HomePath` adds a top-bar link back to the host site. `LogoutPath` adds the sign-out button. Set either, both, or neither. A relative home path is rooted so the UI's `<base href>` does not keep the link inside `/identity`.
 

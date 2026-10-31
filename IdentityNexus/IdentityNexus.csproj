@@ -6,15 +6,19 @@
 		<Nullable>enable</Nullable>
 		<RootNamespace>IdentityNexus</RootNamespace>
 		<Description>A Blazor UI for administering ASP.NET Core Identity users and roles.</Description>
-		<Version>1.0.1</Version>
+		<Version>1.0.2</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="IdentityNexus.Tests" />
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<ProjectReference Include="..\IdentityNexus.Services\IdentityNexus.Services.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Heroicsoft.NetForge.Components" Version="1.2.0" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -30,10 +34,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Heroicsoft.NetForge.Components" Version="1.1.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\IdentityNexus.Services\IdentityNexus.Services.csproj" />
+		<InternalsVisibleTo Include="IdentityNexus.Tests" />
 	</ItemGroup>
 </Project>

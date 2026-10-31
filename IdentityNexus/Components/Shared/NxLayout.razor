@@ -1,11 +1,14 @@
 @inherits LayoutComponentBase
 @inject IOptions<IdentityNexusOptions> Options
+@inject IOptions<ForgeShellOptions> Shell
 @inject AuthenticationStateProvider Authentication
 @inject IJSRuntime JS
 
-<AppShell Brand="@Options.Value.Title"
-          BrandHref="./"
+<AppShell Brand="@Brand"
+          BrandHref="@ForgeBrand.Home(Shell.Value)"
+          EnhanceBrandNavigation="false"
           LogoUrl="@LogoUrl"
+          LogoDarkUrl="@LogoDarkUrl"
           MarkUrl="@MarkUrl"
           Sections="@Sections"
           ShowSearch="false"
@@ -13,6 +16,7 @@
           ShowUserMenu="false"
           ShowVersion="false">
     <TopbarEnd>
+        <HostMenu />
         @if (!string.IsNullOrWhiteSpace(account))
         {
             <span class="nx-account" title="@account">@account</span>
@@ -54,12 +58,17 @@
     private string? account;
 
     private bool UseBuiltInLogo =>
-        Branding.CustomLogoUrl(Options.Value) is null && !Branding.HasCustomTitle(Options.Value);
+        ForgeBrand.Logo(Shell.Value) is null && ForgeBrand.Name(Shell.Value) is null;
 
-    private string? LogoUrl => Branding.CustomLogoUrl(Options.Value)
+    private string Brand => ForgeBrand.Name(Shell.Value) ?? Options.Value.Title;
+
+    private string? LogoUrl => ForgeBrand.Logo(Shell.Value)
         ?? (UseBuiltInLogo ? EmbeddedAssets.Url("Logo.png") : null);
 
-    private string? MarkUrl => UseBuiltInLogo ? EmbeddedAssets.Url("Icon.png") : null;
+    private string? LogoDarkUrl => ForgeBrand.LogoDark(Shell.Value);
+
+    private string? MarkUrl => ForgeBrand.Mark(Shell.Value)
+        ?? (UseBuiltInLogo ? EmbeddedAssets.Url("Icon.png") : null);
 
     protected override async Task OnInitializedAsync()
     {

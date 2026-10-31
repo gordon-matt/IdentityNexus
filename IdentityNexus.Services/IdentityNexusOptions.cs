@@ -10,18 +10,8 @@ public sealed class IdentityNexusOptions
     /// <summary>Path the UI is served from. Leading slash, no trailing slash.</summary>
     public string BasePath { get; set; } = "/identity";
 
-    /// <summary>
-    /// Browser tab title. Also shown in the header when <see cref="LogoPath"/> is unset and this
-    /// is not <see cref="DefaultTitle"/>.
-    /// </summary>
+    /// <summary>Browser tab title. The header logo and name come from the host's shell branding.</summary>
     public string Title { get; set; } = DefaultTitle;
-
-    /// <summary>
-    /// Header image. Takes precedence over <see cref="Title"/>; otherwise a custom title is shown,
-    /// and the IdentityNexus logo is used for the default title. A root-relative path (<c>/logo.png</c>),
-    /// an app-relative path (<c>~/logo.png</c>), or an absolute URL.
-    /// </summary>
-    public string? LogoPath { get; set; }
 
     /// <summary>Users per page. Clamped to between 1 and 100.</summary>
     public int PageSize { get; set; } = 25;
@@ -44,4 +34,10 @@ public sealed class IdentityNexusOptions
     /// not under <c>/Admin</c>, and should still share that area's saved theme.
     /// </summary>
     public string? Area { get; set; }
+
+    /// <summary>
+    /// Which shared menu this document shows. <c>Admin</c> is the usual back office menu.
+    /// An empty string is the menu built without a name. Nothing is drawn when that menu was never built.
+    /// </summary>
+    public string MenuName { get; set; } = "Admin";
 }
