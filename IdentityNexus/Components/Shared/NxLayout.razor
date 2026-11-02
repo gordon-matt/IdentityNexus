@@ -15,15 +15,17 @@
           ShowThemePicker="true"
           ShowUserMenu="false"
           ShowVersion="false">
-    <TopbarEnd>
+    <TopbarMenu>
         <HostMenu />
+    </TopbarMenu>
+    <TopbarEnd>
         @if (!string.IsNullOrWhiteSpace(account))
         {
             <span class="nx-account" title="@account">@account</span>
         }
         @if (!string.IsNullOrWhiteSpace(Options.Value.HomePath))
         {
-            <a class="nf-icon-button" href="@Options.Value.HomePath" title="Back to the site" data-enhance="false">
+            <a class="nf-icon-button" href="@Options.Value.HomePath" title="Back to the site" data-enhance-nav="false">
                 <Icon Name="arrow-left" />
             </a>
         }
