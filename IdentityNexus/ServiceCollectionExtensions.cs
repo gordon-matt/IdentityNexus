@@ -21,11 +21,12 @@ public static class ServiceCollectionExtensions
         {
             // Registered first so the circuit's authentication state wins over the anonymous fallback.
             services.AddRazorComponents().AddInteractiveServerComponents();
-            // The shell reads ForgeUiOptions for the shared theme key. A host that also calls
-            // AddNetForgeComponents keeps its own key; this only fills the options in when it does not.
+            // Before AddNetForgeComponents, which otherwise supplies "no sign-in". A host that already
+            // chose a mode keeps it. The shell reads ForgeUiOptions for the shared theme key, and a host
+            // that also calls AddNetForgeComponents keeps its own key.
+            services.TryAddSingleton<IAuthProviderService>(new AuthProviderService(AuthProvider.Identity, null));
             services.AddNetForgeComponents();
             services.AddNetForgeMenuContributor<IdentityNexusMenuContributor>();
-            services.TryAddSingleton<IAuthProviderService>(new AuthProviderService(AuthProvider.Identity, null));
             services.AddIdentityNexusServices<TUser, TRole>(configure);
             return services;
         }
