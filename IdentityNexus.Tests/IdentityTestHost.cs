@@ -26,7 +26,10 @@ public sealed class IdentityTestHost : IDisposable
         Users = scope.ServiceProvider.GetRequiredService<IUserService>();
         Roles = scope.ServiceProvider.GetRequiredService<IRoleService>();
         UserManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        RoleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     }
+
+    public RoleManager<IdentityRole> RoleManager { get; }
 
     public TestAuth Auth { get; }
 
@@ -36,7 +39,9 @@ public sealed class IdentityTestHost : IDisposable
 
     public UserManager<IdentityUser> UserManager { get; }
 
-    public static async Task<IdentityTestHost> CreateAsync()
+    public static async Task<IdentityTestHost> CreateAsync(
+        Action<IdentityNexusOptions>? configure = null,
+        Action<IServiceCollection>? extraServices = null)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -60,7 +65,8 @@ public sealed class IdentityTestHost : IDisposable
             .AddEntityFrameworkStores<IdentityTestDbContext>()
             .AddDefaultTokenProviders();
 
-        services.AddIdentityNexusServices<IdentityUser, IdentityRole>();
+        services.AddIdentityNexusServices<IdentityUser, IdentityRole>(configure);
+        extraServices?.Invoke(services);
 
         var provider = services.BuildServiceProvider();
         var scope = provider.CreateScope();

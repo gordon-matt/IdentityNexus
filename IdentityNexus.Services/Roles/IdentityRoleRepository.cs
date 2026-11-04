@@ -1,12 +1,14 @@
 using System.Security.Claims;
 using IdentityNexus.Services.Tenancy;
+using Microsoft.Extensions.Options;
 
 namespace IdentityNexus.Services.Roles;
 
 internal sealed class IdentityRoleRepository<TRole>(
     RoleManager<TRole> roleManager,
     IServiceProvider services,
-    IEnumerable<ITenantRule<TRole>> tenants) : IRoleRepository
+    IEnumerable<ITenantRule<TRole>> tenants,
+    IOptions<IdentityNexusOptions> options) : IRoleRepository
     where TRole : IdentityRole, new()
 {
     public Task<int> CountAsync(CancellationToken cancellationToken = default)
@@ -107,6 +109,7 @@ internal sealed class IdentityRoleRepository<TRole>(
             role.Id!,
             role.Name,
             claims
+                .Where(claim => !options.Value.ManagedClaimTypes.Contains(claim.Type))
                 .Select(claim => new UserClaim(claim.Type, claim.Value))
                 .OrderBy(claim => claim.Type, StringComparer.Ordinal)
                 .ThenBy(claim => claim.Value, StringComparer.Ordinal)
@@ -115,13 +118,17 @@ internal sealed class IdentityRoleRepository<TRole>(
 
     private async Task<IdentityResult> SetClaimsAsync(TRole role, IReadOnlyList<UserClaim> claims)
     {
+        var managed = options.Value.ManagedClaimTypes;
         var desired = claims
             .Where(claim => !string.IsNullOrWhiteSpace(claim.Type))
             .Select(claim => new UserClaim(claim.Type.Trim(), claim.Value.Trim()))
+            .Where(claim => !managed.Contains(claim.Type))
             .Distinct()
             .ToArray();
 
-        var current = await roleManager.GetClaimsAsync(role);
+        var current = (await roleManager.GetClaimsAsync(role))
+            .Where(claim => !managed.Contains(claim.Type))
+            .ToArray();
 
         foreach (var claim in current.Where(claim => !desired.Any(item => item.Type == claim.Type && item.Value == claim.Value)))
         {

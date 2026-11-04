@@ -16,26 +16,20 @@ internal static class IdentityResultMapper
             return Result.Success();
         }
 
-        var errors = identity.Errors
+        string[] errors = identity.Errors
             .Select(error => string.IsNullOrWhiteSpace(error.Description) ? error.Code : error.Description)
             .Where(message => !string.IsNullOrWhiteSpace(message))
             .ToArray();
 
-        if (identity.Errors.Any(error => error.Code is "UserNotFound" or "RoleNotFound"))
-        {
-            return Result.NotFound(errors);
-        }
-
-        if (identity.Errors.Any(error => ConflictCodes.Contains(error.Code)))
-        {
-            return Result.Conflict(errors);
-        }
-
-        return Result.Invalid(identity.Errors.Select(error => new ValidationError
-        {
-            Identifier = error.Code,
-            ErrorMessage = string.IsNullOrWhiteSpace(error.Description) ? error.Code : error.Description,
-        }).ToArray());
+        return identity.Errors.Any(error => error.Code is "UserNotFound" or "RoleNotFound")
+            ? Result.NotFound(errors)
+            : identity.Errors.Any(error => ConflictCodes.Contains(error.Code))
+            ? Result.Conflict(errors)
+            : Result.Invalid(identity.Errors.Select(error => new ValidationError
+            {
+                Identifier = error.Code,
+                ErrorMessage = string.IsNullOrWhiteSpace(error.Description) ? error.Code : error.Description,
+            }).ToArray());
     }
 
     public static Result<T> ToResult<T>(IdentityResult identity) => ToResult(identity).To<T>();

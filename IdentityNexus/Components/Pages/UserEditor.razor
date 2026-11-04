@@ -1,6 +1,9 @@
 @using System.Security.Claims
+@using IdentityNexus.Extensibility
+@using IdentityNexus.Services.Extensibility
 @inject IUserService Users
 @inject AuthenticationStateProvider Authentication
+@inject IOptions<IdentityNexusOptions> NexusOptions
 
 <aside class="nx-details">
     <header class="nx-details-header">
@@ -23,6 +26,11 @@
         {
             <button type="button" class="nx-tab @(tab == 2 ? "is-active" : null)" @onclick="() => tab = 2">Claims</button>
             <button type="button" class="nx-tab @(tab == 3 ? "is-active" : null)" @onclick="() => tab = 3">Security</button>
+        }
+        @for (int index = 0; index < Sections.Count; index++)
+        {
+            int sectionTab = FirstSectionTab + index;
+            <button type="button" class="nx-tab @(tab == sectionTab ? "is-active" : null)" @onclick="() => tab = sectionTab">@Sections[index].Title</button>
         }
     </div>
 
@@ -220,6 +228,14 @@
         </div>
     }
 
+    @if (Sections.Count > 0)
+    {
+        <SectionPanels @ref="sectionPanels"
+                       Sections="Sections"
+                       Subject="subject"
+                       Active="@(tab >= FirstSectionTab ? tab - FirstSectionTab : null)" />
+    }
+
     <footer class="nx-details-footer">
         <button type="button" class="nf-button" @onclick="OnClose">Cancel</button>
         @if (tab != 3)
@@ -244,7 +260,12 @@
 
     [Parameter] public EventCallback<string?> OnChanged { get; set; }
 
+    private const int FirstSectionTab = 10;
+
     private ConfirmDialog confirm = default!;
+    private SectionPanels? sectionPanels;
+    private IdentitySubject subject = new(IdentitySubjectKind.User, null, null);
+    private List<string>? carriedMessages;
     private string? loadedKey;
     private int tab;
     private bool busy;
@@ -273,6 +294,8 @@
 
     private bool IsSelf => !IsNew && User is not null && string.Equals(User.Id, currentUserId, StringComparison.Ordinal);
 
+    private IList<EditorSection> Sections => NexusOptions.Value.UserSections;
+
     protected override async Task OnInitializedAsync()
     {
         var state = await Authentication.GetAuthenticationStateAsync();
@@ -290,8 +313,11 @@
 
         loadedKey = key;
         tab = 0;
-        messages = [];
+        // A new user's sections save after it is created, and their failures should still be shown on the saved user.
+        messages = carriedMessages ?? [];
+        carriedMessages = null;
         calm = false;
+        subject = new IdentitySubject(IdentitySubjectKind.User, IsNew ? null : User?.Id, IsNew ? null : User?.UserName);
         password = string.Empty;
         confirmPassword = string.Empty;
         claimTypeChoice = string.Empty;
@@ -388,6 +414,7 @@
                 return;
             }
 
+            carriedMessages = await SaveSectionsAsync(created.Value.Id);
             await OnChanged.InvokeAsync(created.Value.Id);
             return;
         }
@@ -411,16 +438,21 @@
             [.. selectedRoles],
             claims));
 
-        busy = false;
         if (!updated.IsSuccessStatus())
         {
+            busy = false;
             messages = [.. updated.GetDisplayMessages()];
             calm = false;
             return;
         }
 
+        messages = await SaveSectionsAsync(updated.Value.Id);
+        busy = false;
         await OnChanged.InvokeAsync(updated.Value.Id);
     }
+
+    private async Task<List<string>> SaveSectionsAsync(string id) =>
+        sectionPanels is null ? [] : [.. await sectionPanels.SaveAsync(id)];
 
     private bool TryReadLockout(out DateTimeOffset? end)
     {

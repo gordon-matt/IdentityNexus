@@ -1,4 +1,7 @@
+@using IdentityNexus.Extensibility
+@using IdentityNexus.Services.Extensibility
 @inject IRoleService Roles
+@inject IOptions<IdentityNexusOptions> NexusOptions
 
 <aside class="nx-details">
     <header class="nx-details-header">
@@ -10,6 +13,18 @@
         </button>
     </header>
 
+    @if (Sections.Count > 0)
+    {
+        <div class="nx-tabs" role="tablist">
+            <button type="button" class="nx-tab @(tab == 0 ? "is-active" : null)" @onclick="() => tab = 0">Details</button>
+            @for (int index = 0; index < Sections.Count; index++)
+            {
+                int sectionTab = index + 1;
+                <button type="button" class="nx-tab @(tab == sectionTab ? "is-active" : null)" @onclick="() => tab = sectionTab">@Sections[index].Title</button>
+            }
+        </div>
+    }
+
     @if (messages.Count > 0)
     {
         <div class="nx-banner @(saved ? "nx-banner-ok" : null)" role="status">
@@ -20,7 +35,7 @@
         </div>
     }
 
-    <div class="nx-form">
+    <div class="nx-form" hidden="@(tab != 0)">
         <label class="nx-field">
             <span>Name</span>
             <input class="nf-input" @bind="name" />
@@ -74,6 +89,14 @@
         <button type="button" class="nf-button" @onclick="AddClaim">Add claim</button>
     </div>
 
+    @if (Sections.Count > 0)
+    {
+        <SectionPanels @ref="sectionPanels"
+                       Sections="Sections"
+                       Subject="subject"
+                       Active="@(tab > 0 ? tab - 1 : null)" />
+    }
+
     <footer class="nx-details-footer">
         @if (!IsNew)
         {
@@ -98,7 +121,11 @@
     [Parameter] public EventCallback<string?> OnChanged { get; set; }
 
     private ConfirmDialog confirm = default!;
+    private SectionPanels? sectionPanels;
+    private IdentitySubject subject = new(IdentitySubjectKind.Role, null, null);
+    private List<string>? carriedMessages;
     private string? loadedKey;
+    private int tab;
     private bool busy;
     private bool saved;
     private string name = string.Empty;
@@ -117,7 +144,11 @@
         }
 
         loadedKey = key;
-        messages = [];
+        tab = 0;
+        // A new role's sections save after it is created, and their failures should still be shown on the saved role.
+        messages = carriedMessages ?? [];
+        carriedMessages = null;
+        subject = new IdentitySubject(IdentitySubjectKind.Role, IsNew ? null : Role?.Id, IsNew ? null : Role?.Name);
         saved = false;
         claimTypeChoice = string.Empty;
         customClaimType = string.Empty;
@@ -154,15 +185,28 @@
         busy = true;
         saved = false;
         var result = await Roles.SaveAsync(new SaveRoleRequest(IsNew ? null : Role?.Id, name, claims));
-        busy = false;
         if (!result.IsSuccessStatus())
         {
+            busy = false;
             messages = [.. result.GetDisplayMessages()];
             return;
         }
 
+        IReadOnlyList<string> sectionMessages = sectionPanels is null ? [] : await sectionPanels.SaveAsync(result.Value.Id);
+        busy = false;
+        if (IsNew)
+        {
+            carriedMessages = [.. sectionMessages];
+        }
+        else
+        {
+            messages = [.. sectionMessages];
+        }
+
         await OnChanged.InvokeAsync(result.Value.Id);
     }
+
+    private IList<EditorSection> Sections => NexusOptions.Value.RoleSections;
 
     private async Task DeleteAsync()
     {

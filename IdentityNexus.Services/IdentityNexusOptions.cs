@@ -1,3 +1,5 @@
+using IdentityNexus.Services.Extensibility;
+
 namespace IdentityNexus.Services;
 
 /// <summary>Where the management UI is mounted and how it pages.</summary>
@@ -40,4 +42,16 @@ public sealed class IdentityNexusOptions
     /// An empty string is the menu built without a name. Nothing is drawn when that menu was never built.
     /// </summary>
     public string MenuName { get; set; } = "Admin";
+
+    /// <summary>Extra tabs in the user editor, in the order added. Each one edits whatever the host stores per user.</summary>
+    public IList<EditorSection> UserSections { get; } = [];
+
+    /// <summary>Extra tabs in the role editor, in the order added.</summary>
+    public IList<EditorSection> RoleSections { get; } = [];
+
+    /// <summary>
+    /// Claim types that a host section edits. The Claims lists never show them, and saving a user or role
+    /// leaves them as they are, so the generic claim editor cannot undo what the section saved.
+    /// </summary>
+    public ISet<string> ManagedClaimTypes { get; } = new HashSet<string>(StringComparer.Ordinal);
 }

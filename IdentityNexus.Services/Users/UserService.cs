@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using IdentityNexus.Services.Extensibility;
 using IdentityNexus.Services.Roles;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Options;
@@ -10,7 +11,8 @@ public sealed class UserService(
     IOptions<IdentityNexusOptions> options,
     AuthenticationStateProvider authentication,
     IUserRepository users,
-    IRoleRepository roles) : IUserService
+    IRoleRepository roles,
+    IdentityChangeNotifier changes) : IUserService
 {
     private const int MaxPageSize = 100;
 
@@ -60,6 +62,7 @@ public sealed class UserService(
             }
 
             var (id, identity) = await users.CreateAsync(request, cancellationToken);
+            await changes.NotifyAsync(IdentitySubjectKind.User, id, IdentityChangeType.Created, cancellationToken);
             if (!identity.Succeeded)
             {
                 var failed = IdentityResultMapper.ToResult<UserDetail>(identity);
@@ -100,6 +103,12 @@ public sealed class UserService(
             }
 
             var identity = await users.UpdateAsync(request, cancellationToken);
+            if (!IsMissing(identity))
+            {
+                // A failure part way through may already have saved the earlier changes.
+                await changes.NotifyAsync(IdentitySubjectKind.User, request.Id, IdentityChangeType.Updated, cancellationToken);
+            }
+
             if (!identity.Succeeded)
             {
                 return NotFoundOr(identity);
@@ -120,21 +129,21 @@ public sealed class UserService(
             }
 
             var identity = await users.SetPasswordAsync(request.Id, request.Password, cancellationToken);
-            return identity.Succeeded ? Result.Success() : IdentityResultMapper.ToResult(identity);
+            return await UpdatedAsync(request.Id, identity, cancellationToken);
         });
 
     public Task<Result> RemoveLoginAsync(RemoveLoginRequest request, CancellationToken cancellationToken = default) =>
         RunAsync("remove the external login", async () =>
         {
             var identity = await users.RemoveLoginAsync(request.Id, request.LoginProvider, request.ProviderKey, cancellationToken);
-            return identity.Succeeded ? Result.Success() : IdentityResultMapper.ToResult(identity);
+            return await UpdatedAsync(request.Id, identity, cancellationToken);
         });
 
     public Task<Result> ResetAuthenticatorAsync(string id, CancellationToken cancellationToken = default) =>
         RunAsync("reset the authenticator", async () =>
         {
             var identity = await users.ResetAuthenticatorAsync(id, cancellationToken);
-            return identity.Succeeded ? Result.Success() : IdentityResultMapper.ToResult(identity);
+            return await UpdatedAsync(id, identity, cancellationToken);
         });
 
     public Task<Result> DeleteAsync(string id, CancellationToken cancellationToken = default) =>
@@ -149,10 +158,11 @@ public sealed class UserService(
             var identity = await users.DeleteAsync(id, cancellationToken);
             if (identity.Succeeded)
             {
+                await changes.NotifyAsync(IdentitySubjectKind.User, id, IdentityChangeType.Deleted, cancellationToken);
                 return Result.Success();
             }
 
-            return identity.Errors.Any(error => error.Code == "UserNotFound")
+            return IsMissing(identity)
                 ? Result.NotFound("That user no longer exists.")
                 : IdentityResultMapper.ToResult(identity);
         });
@@ -163,8 +173,22 @@ public sealed class UserService(
         return state.User.FindFirstValue(ClaimTypes.NameIdentifier);
     }
 
+    private async Task<Result> UpdatedAsync(string id, IdentityResult identity, CancellationToken cancellationToken)
+    {
+        if (!identity.Succeeded)
+        {
+            return IdentityResultMapper.ToResult(identity);
+        }
+
+        await changes.NotifyAsync(IdentitySubjectKind.User, id, IdentityChangeType.Updated, cancellationToken);
+        return Result.Success();
+    }
+
+    private static bool IsMissing(IdentityResult identity) =>
+        identity.Errors.Any(error => error.Code == "UserNotFound");
+
     private static Result<UserDetail> NotFoundOr(IdentityResult identity) =>
-        identity.Errors.Any(error => error.Code == "UserNotFound")
+        IsMissing(identity)
             ? Result<UserDetail>.NotFound("That user no longer exists.")
             : IdentityResultMapper.ToResult<UserDetail>(identity);
 

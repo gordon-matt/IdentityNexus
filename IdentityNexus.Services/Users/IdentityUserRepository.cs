@@ -1,18 +1,20 @@
 using IdentityNexus.Services.Tenancy;
+using Microsoft.Extensions.Options;
 
 namespace IdentityNexus.Services.Users;
 
 internal sealed class IdentityUserRepository<TUser>(
     UserManager<TUser> userManager,
     IServiceProvider services,
-    IEnumerable<ITenantRule<TUser>> tenants) : IUserRepository
+    IEnumerable<ITenantRule<TUser>> tenants,
+    IOptions<IdentityNexusOptions> options) : IUserRepository
     where TUser : IdentityUser, new()
 {
     public async Task<(int Users, int LockedOut, int UnconfirmedEmail)> CountAsync(CancellationToken cancellationToken = default)
     {
         EnsureQueryable();
 
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         int users = await ScopedUsers().CountAsync(cancellationToken);
         int lockedOut = (await LockedIdsAsync(now, cancellationToken)).Count;
         int unconfirmed = await ScopedUsers().CountAsync(user => !user.EmailConfirmed, cancellationToken);
@@ -24,7 +26,7 @@ internal sealed class IdentityUserRepository<TUser>(
     {
         EnsureQueryable();
 
-        IQueryable<TUser> users = ScopedUsers();
+        var users = ScopedUsers();
 
         if (!string.IsNullOrWhiteSpace(query.Role))
         {
@@ -180,12 +182,7 @@ internal sealed class IdentityUserRepository<TUser>(
         }
 
         var roles = await SetRolesAsync(user, request.Roles);
-        if (!roles.Succeeded)
-        {
-            return roles;
-        }
-
-        return await SetClaimsAsync(user, request.Claims);
+        return !roles.Succeeded ? roles : await SetClaimsAsync(user, request.Claims);
     }
 
     public async Task<IdentityResult> SetPasswordAsync(string id, string password, CancellationToken cancellationToken = default)
@@ -263,13 +260,17 @@ internal sealed class IdentityUserRepository<TUser>(
 
     private async Task<IdentityResult> SetClaimsAsync(TUser user, IReadOnlyList<UserClaim> claims)
     {
+        var managed = options.Value.ManagedClaimTypes;
         var desired = claims
             .Where(claim => !string.IsNullOrWhiteSpace(claim.Type))
             .Select(claim => new UserClaim(claim.Type.Trim(), claim.Value.Trim()))
+            .Where(claim => !managed.Contains(claim.Type))
             .Distinct()
             .ToArray();
 
-        var current = await userManager.GetClaimsAsync(user);
+        var current = (await userManager.GetClaimsAsync(user))
+            .Where(claim => !managed.Contains(claim.Type))
+            .ToArray();
 
         foreach (var claim in current.Where(claim => !desired.Any(item => item.Type == claim.Type && item.Value == claim.Value)))
         {
@@ -310,7 +311,11 @@ internal sealed class IdentityUserRepository<TUser>(
             user.TwoFactorEnabled,
             user.AccessFailedCount,
             roles.OrderBy(role => role, StringComparer.OrdinalIgnoreCase).ToArray(),
-            claims.Select(claim => new UserClaim(claim.Type, claim.Value)).OrderBy(claim => claim.Type, StringComparer.Ordinal).ToArray(),
+            claims
+                .Where(claim => !options.Value.ManagedClaimTypes.Contains(claim.Type))
+                .Select(claim => new UserClaim(claim.Type, claim.Value))
+                .OrderBy(claim => claim.Type, StringComparer.Ordinal)
+                .ToArray(),
             logins.Select(login => new UserLogin(login.LoginProvider, login.ProviderKey, login.ProviderDisplayName)).ToArray());
     }
 

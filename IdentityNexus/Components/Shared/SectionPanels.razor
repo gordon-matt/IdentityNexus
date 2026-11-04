@@ -1,0 +1,62 @@
+@using IdentityNexus.Extensibility
+@using IdentityNexus.Services.Extensibility
+@using Microsoft.Extensions.Logging
+@inject ILogger<SectionPanels> Logger
+
+@for (int index = 0; index < Sections.Count; index++)
+{
+    int current = index;
+    var section = Sections[current];
+    <div class="nx-form" hidden="@(Active != current)">
+        <DynamicComponent @key="KeyFor(current)"
+                          Type="section.ComponentType"
+                          Parameters="parameters"
+                          @ref="panels[current]" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IList<EditorSection> Sections { get; set; } = [];
+
+    [Parameter, EditorRequired] public IdentitySubject Subject { get; set; } = default!;
+
+    /// <summary>Index of the section on show, or null when one of the editor's own tabs is open.</summary>
+    [Parameter] public int? Active { get; set; }
+
+    private readonly Dictionary<int, DynamicComponent?> panels = [];
+    private Dictionary<string, object?> parameters = [];
+
+    protected override void OnParametersSet() =>
+        parameters = new Dictionary<string, object?> { [nameof(IdentityNexusSection.Subject)] = Subject };
+
+    /// <summary>Saves every section in turn and returns the messages from those that failed.</summary>
+    public async Task<IReadOnlyList<string>> SaveAsync(string id)
+    {
+        var messages = new List<string>();
+        for (int index = 0; index < Sections.Count; index++)
+        {
+            if (!panels.TryGetValue(index, out var panel) || panel?.Instance is not IdentityNexusSection section)
+            {
+                continue;
+            }
+
+            try
+            {
+                var result = await section.SaveAsync(id);
+                if (!result.IsSuccessStatus())
+                {
+                    messages.AddRange(result.GetDisplayMessages().Select(message => $"{Sections[index].Title}: {message}"));
+                }
+            }
+            catch (Exception exception)
+            {
+                Logger.LogError(exception, "The {Section} section could not save {Kind} {Id}.", Sections[index].Title, Subject.Kind, id);
+                messages.Add($"{Sections[index].Title}: could not be saved.");
+            }
+        }
+
+        return messages;
+    }
+
+    private string KeyFor(int index) => $"{Subject.Kind}:{Subject.Id ?? "new"}:{index}";
+}

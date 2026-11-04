@@ -1,0 +1,91 @@
+@using System.Security.Claims
+@using Ardalis.Result
+@using IdentityNexus.Extensibility
+@using IdentityNexus.Services.Extensibility
+@using Microsoft.AspNetCore.Components.Forms
+@inherits IdentityNexusSection
+@inject UserManager<ApplicationUser> Users
+@inject RoleManager<ApplicationRole> Roles
+
+@* An example of a host setting kept per user and per role. It is stored as a claim, but a section can store anything. *@
+<label class="nx-field">
+    <span>Department</span>
+    <select class="nf-input" @bind="department">
+        <option value="">None</option>
+        @foreach (string option in Departments)
+        {
+            <option value="@option">@option</option>
+        }
+    </select>
+</label>
+<p class="nf-muted nf-small">Saved with the rest of the @(Subject.Kind == IdentitySubjectKind.User ? "user" : "role").</p>
+
+@code {
+    public const string ClaimType = "department";
+
+    private static readonly string[] Departments = ["Editorial", "Marketing", "Sales", "Support"];
+
+    private string department = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Subject.Id is null)
+        {
+            return;
+        }
+
+        var claims = Subject.Kind == IdentitySubjectKind.User
+            ? await UserClaimsAsync(Subject.Id)
+            : await RoleClaimsAsync(Subject.Id);
+
+        department = claims.FirstOrDefault(claim => claim.Type == ClaimType)?.Value ?? string.Empty;
+    }
+
+    private async Task<IList<Claim>> UserClaimsAsync(string id) =>
+        await Users.FindByIdAsync(id) is { } user ? await Users.GetClaimsAsync(user) : [];
+
+    private async Task<IList<Claim>> RoleClaimsAsync(string id) =>
+        await Roles.FindByIdAsync(id) is { } role ? await Roles.GetClaimsAsync(role) : [];
+
+    public override async Task<Result> SaveAsync(string id, CancellationToken cancellationToken = default)
+    {
+        if (Subject.Kind == IdentitySubjectKind.User)
+        {
+            var user = await Users.FindByIdAsync(id);
+            if (user is null)
+            {
+                return Result.NotFound("That user no longer exists.");
+            }
+
+            foreach (var claim in (await Users.GetClaimsAsync(user)).Where(claim => claim.Type == ClaimType))
+            {
+                await Users.RemoveClaimAsync(user, claim);
+            }
+
+            if (department.Length > 0)
+            {
+                await Users.AddClaimAsync(user, new Claim(ClaimType, department));
+            }
+
+            return Result.Success();
+        }
+
+        var role = await Roles.FindByIdAsync(id);
+        if (role is null)
+        {
+            return Result.NotFound("That role no longer exists.");
+        }
+
+        foreach (var claim in (await Roles.GetClaimsAsync(role)).Where(claim => claim.Type == ClaimType))
+        {
+            await Roles.RemoveClaimAsync(role, claim);
+        }
+
+        if (department.Length > 0)
+        {
+            await Roles.AddClaimAsync(role, new Claim(ClaimType, department));
+        }
+
+        return Result.Success();
+    }
+}

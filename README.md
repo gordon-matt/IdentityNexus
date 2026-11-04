@@ -22,6 +22,7 @@ Users and roles use string keys. Passwords, security stamps, lockout and role as
 - Assign roles, edit claims, set a password, remove an external login, reset an authenticator, and delete a user.
 - Create, rename and delete roles, including role claims.
 - The signed-in account cannot delete itself or lock itself out.
+- Add your own tabs to the user and role editors, and hear about every change (see [Extending the editors](#extending-the-editors)).
 
 ## Add it to an existing site
 
@@ -85,6 +86,94 @@ public theme. Call `UseAuthentication` and `UseAuthorization` before `MapIdentit
 A host with no `.razor` files of its own still receives `blazor.web.js` when IdentityNexus is
 installed as a package. A project reference should import `build/IdentityNexus.props`, which the
 demo does.
+
+## Extending the editors
+
+A host often keeps more on a user or role than Identity's own columns: a department, a set of
+permissions, a profile in another table. IdentityNexus has three hooks for that, and none of them
+assume anything about what the host stores.
+
+### Sections
+
+A section is a Blazor component that gets its own tab in the user or role editor. Derive from
+`IdentityNexusSection`, load whatever you need from `Subject`, and save in `SaveAsync`:
+
+```razor
+@using Ardalis.Result
+@using IdentityNexus.Extensibility
+@inherits IdentityNexusSection
+
+<label class="nx-field">
+    <span>Department</span>
+    <select class="nf-input" @bind="department">
+        <option value="">None</option>
+        <option>Sales</option>
+        <option>Support</option>
+    </select>
+</label>
+
+@code {
+    private string department = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Subject.IsNew)
+        {
+            department = await LoadDepartmentAsync(Subject.Kind, Subject.Id!);
+        }
+    }
+
+    public override async Task<Result> SaveAsync(string id, CancellationToken cancellationToken = default)
+    {
+        await SaveDepartmentAsync(Subject.Kind, id, department);
+        return Result.Success();
+    }
+}
+```
+
+`IdentityNexus.Demo/Sections/DepartmentSection.razor` is a complete version that stores the
+department as a claim on users and roles.
+
+Register it with a tab title:
+
+```csharp
+builder.Services.AddIdentityNexus<ApplicationUser, ApplicationRole>(options =>
+{
+    options.AddUserSection<DepartmentSection>("Department", "department");
+    options.AddRoleSection<DepartmentSection>("Department", "department");
+});
+```
+
+- `Subject` says whether the editor is showing a user or a role, its id and its name. For a new user or role, `IsNew` is true and the id is null.
+- `SaveAsync` runs after the core editor has saved, so a new user or role already has its id. A failed `Result` is shown in the editor under the section's title. It does not undo the core save.
+- Sections stay rendered while another tab is open, so unsaved input survives switching tabs.
+
+### Managed claim types
+
+Any arguments after the title are claim types that the section owns. Use this when a section stores
+its data as claims. The editor's generic Claims list does not show these types, and saving that list
+leaves them alone, so the two editors can't overwrite each other. You can also add types directly
+with `options.ManagedClaimTypes.Add("department")`.
+
+### Change observers
+
+Implement `IIdentityChangeObserver` to hear about every user or role that IdentityNexus creates,
+updates or deletes, for example to clear a cache or write an audit entry:
+
+```csharp
+public sealed class AuditObserver(ILogger<AuditObserver> logger) : IIdentityChangeObserver
+{
+    public Task OnChangedAsync(IdentityChange change, CancellationToken cancellationToken)
+    {
+        logger.LogInformation("{Kind} {Id} was {Type}", change.Kind, change.Id, change.Type);
+        return Task.CompletedTask;
+    }
+}
+
+builder.Services.AddIdentityNexusObserver<AuditObserver>();
+```
+
+Observers run after the change is saved. One that throws is logged, and the change still succeeds.
 
 ## Demo
 

@@ -1,3 +1,4 @@
+using IdentityNexus.Services.Extensibility;
 using IdentityNexus.Services.Roles;
 using IdentityNexus.Services.Users;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -30,9 +31,20 @@ public static class ServiceCollectionExtensions
             services.TryAddScoped<IRoleRepository, IdentityRoleRepository<TRole>>();
             services.TryAddScoped<IUserService, UserService>();
             services.TryAddScoped<IRoleService, RoleService>();
+            services.TryAddScoped<IdentityChangeNotifier>();
 
             return services;
         }
+    }
+
+    /// <summary>
+    /// Adds an observer that hears about every user and role IdentityNexus writes. Add as many as needed.
+    /// </summary>
+    public static IServiceCollection AddIdentityNexusObserver<TObserver>(this IServiceCollection services)
+        where TObserver : class, IIdentityChangeObserver
+    {
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IIdentityChangeObserver, TObserver>());
+        return services;
     }
 
     private static string NormalizeBasePath(string? basePath)
@@ -55,11 +67,6 @@ public static class ServiceCollectionExtensions
             path = path[1..];
         }
 
-        if (path.StartsWith('/') || Uri.TryCreate(path, UriKind.Absolute, out _))
-        {
-            return path;
-        }
-
-        return "/" + path;
+        return path.StartsWith('/') || Uri.TryCreate(path, UriKind.Absolute, out _) ? path : "/" + path;
     }
 }

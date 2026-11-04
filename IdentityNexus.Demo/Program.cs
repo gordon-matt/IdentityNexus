@@ -56,6 +56,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddIdentityNexus<ApplicationUser, ApplicationRole>(options =>
 {
     options.LogoutPath = "/account/logout";
+    options.AddUserSection<DepartmentSection>("Department", DepartmentSection.ClaimType);
+    options.AddRoleSection<DepartmentSection>("Department", DepartmentSection.ClaimType);
 });
 
 var app = builder.Build();
@@ -84,7 +86,9 @@ app.MapIdentityNexus().RequireAuthorization();
 
 app.Run();
 
-static string RequiredConnection(string provider, string? connectionString) =>
-    string.IsNullOrWhiteSpace(connectionString)
+static string RequiredConnection(string provider, string? connectionString)
+{
+    return string.IsNullOrWhiteSpace(connectionString)
         ? throw new InvalidOperationException($"ConnectionStrings:IdentityNexus is required for {provider}.")
         : connectionString;
+}

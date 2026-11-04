@@ -1,6 +1,11 @@
+using IdentityNexus.Services.Extensibility;
+
 namespace IdentityNexus.Services.Roles;
 
-public sealed class RoleService(ILogger<RoleService> logger, IRoleRepository roles) : IRoleService
+public sealed class RoleService(
+    ILogger<RoleService> logger,
+    IRoleRepository roles,
+    IdentityChangeNotifier changes) : IRoleService
 {
     public Task<Result<IReadOnlyList<RoleSummary>>> ListAsync(CancellationToken cancellationToken = default) =>
         RunAsync("list roles", async () =>
@@ -38,8 +43,9 @@ public sealed class RoleService(ILogger<RoleService> logger, IRoleRepository rol
 
             string? id = request.Id;
             IdentityResult identity;
+            bool isNew = string.IsNullOrWhiteSpace(id);
 
-            if (string.IsNullOrWhiteSpace(id))
+            if (isNew)
             {
                 var created = await roles.CreateAsync(request.Name, request.Claims, cancellationToken);
                 id = created.Id;
@@ -47,12 +53,18 @@ public sealed class RoleService(ILogger<RoleService> logger, IRoleRepository rol
             }
             else
             {
-                identity = await roles.UpdateAsync(id, request.Name, request.Claims, cancellationToken);
+                identity = await roles.UpdateAsync(id!, request.Name, request.Claims, cancellationToken);
+            }
+
+            if (!IsMissing(identity))
+            {
+                // A failure part way through may already have saved the earlier changes.
+                await changes.NotifyAsync(IdentitySubjectKind.Role, id, isNew ? IdentityChangeType.Created : IdentityChangeType.Updated, cancellationToken);
             }
 
             if (!identity.Succeeded)
             {
-                return identity.Errors.Any(error => error.Code == "RoleNotFound")
+                return IsMissing(identity)
                     ? Result<RoleSummary>.NotFound("That role no longer exists.")
                     : IdentityResultMapper.ToResult<RoleSummary>(identity);
             }
@@ -71,13 +83,17 @@ public sealed class RoleService(ILogger<RoleService> logger, IRoleRepository rol
             var identity = await roles.DeleteAsync(id, cancellationToken);
             if (identity.Succeeded)
             {
+                await changes.NotifyAsync(IdentitySubjectKind.Role, id, IdentityChangeType.Deleted, cancellationToken);
                 return Result.Success();
             }
 
-            return identity.Errors.Any(error => error.Code == "RoleNotFound")
+            return IsMissing(identity)
                 ? Result.NotFound("That role no longer exists.")
                 : IdentityResultMapper.ToResult(identity);
         });
+
+    private static bool IsMissing(IdentityResult identity) =>
+        identity.Errors.Any(error => error.Code == "RoleNotFound");
 
     private async Task<Result<T>> RunAsync<T>(string action, Func<Task<Result<T>>> work)
     {
