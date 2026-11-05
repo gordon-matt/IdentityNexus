@@ -6,8 +6,29 @@
 		<Nullable>enable</Nullable>
 		<RootNamespace>IdentityNexus.Services</RootNamespace>
 		<Description>Services for administering an ASP.NET Core Identity store.</Description>
-		<Version>1.1.0</Version>
+		<Version>1.1.1</Version>
+		<Authors>Matt Gordon</Authors>
+		<Company>Matt Gordon</Company>
+		<PackageTags>aspnetcore;identity;aspnetcore-identity;entityframeworkcore;efcore;user-management;role-management</PackageTags>
+		<PackageProjectUrl>https://github.com/gordon-matt/IdentityNexus</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/gordon-matt/IdentityNexus</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageIcon>Icon.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
+	<ItemGroup>
+		<None Include="..\_Misc\Icon.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />

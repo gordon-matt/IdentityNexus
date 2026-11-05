@@ -6,8 +6,29 @@
 		<Nullable>enable</Nullable>
 		<RootNamespace>IdentityNexus</RootNamespace>
 		<Description>A Blazor UI for administering ASP.NET Core Identity users and roles.</Description>
-		<Version>1.1.0</Version>
+		<Version>1.1.1</Version>
+		<Authors>Matt Gordon</Authors>
+		<Company>Matt Gordon</Company>
+		<PackageTags>aspnetcore;identity;aspnetcore-identity;blazor;admin;user-management;role-management;ui</PackageTags>
+		<PackageProjectUrl>https://github.com/gordon-matt/IdentityNexus</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/gordon-matt/IdentityNexus</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageIcon>Icon.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
+	<ItemGroup>
+		<None Include="..\_Misc\Icon.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -18,7 +39,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Heroicsoft.NetForge.Components" Version="1.2.1" />
+		<PackageReference Include="Heroicsoft.NetForge.Components" Version="1.2.3" />
 	</ItemGroup>
 
 	<ItemGroup>
