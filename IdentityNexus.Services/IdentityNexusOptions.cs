@@ -5,8 +5,14 @@ namespace IdentityNexus.Services;
 /// <summary>Where the management UI is mounted and how it pages.</summary>
 public sealed class IdentityNexusOptions
 {
+    /// <summary>
+    /// The section name constant.
+    /// </summary>
     public const string SectionName = "IdentityNexus";
 
+    /// <summary>
+    /// The default title constant.
+    /// </summary>
     public const string DefaultTitle = "IdentityNexus";
 
     /// <summary>Path the UI is served from. Leading slash, no trailing slash.</summary>

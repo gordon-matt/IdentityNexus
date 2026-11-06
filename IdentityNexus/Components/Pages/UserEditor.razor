@@ -250,14 +250,29 @@
 <ConfirmDialog @ref="confirm" />
 
 @code {
+    /// <summary>
+    /// Gets or sets the user.
+    /// </summary>
     [Parameter] public UserDetail? User { get; set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether this instance is new.
+    /// </summary>
     [Parameter] public bool IsNew { get; set; }
 
+    /// <summary>
+    /// Gets or sets the roles.
+    /// </summary>
     [Parameter] public IReadOnlyList<RoleSummary> Roles { get; set; } = [];
 
+    /// <summary>
+    /// Gets or sets the callback raised for the close event.
+    /// </summary>
     [Parameter] public EventCallback OnClose { get; set; }
 
+    /// <summary>
+    /// Gets or sets the callback raised for the changed event.
+    /// </summary>
     [Parameter] public EventCallback<string?> OnChanged { get; set; }
 
     private const int FirstSectionTab = 10;
@@ -296,6 +311,7 @@
 
     private IList<EditorSection> Sections => NexusOptions.Value.UserSections;
 
+    /// <inheritdoc/>
     protected override async Task OnInitializedAsync()
     {
         var state = await Authentication.GetAuthenticationStateAsync();
@@ -303,6 +319,7 @@
         identityKnown = true;
     }
 
+    /// <inheritdoc/>
     protected override void OnParametersSet()
     {
         string key = IsNew ? "new" : User?.Id ?? string.Empty;

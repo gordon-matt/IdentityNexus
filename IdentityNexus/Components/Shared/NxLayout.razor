@@ -72,12 +72,14 @@
     private string? MarkUrl => ForgeBrand.Mark(Shell.Value)
         ?? (UseBuiltInLogo ? EmbeddedAssets.Url("Icon.png") : null);
 
+    /// <inheritdoc/>
     protected override async Task OnInitializedAsync()
     {
         var state = await Authentication.GetAuthenticationStateAsync();
         account = state.User.Identity?.Name;
     }
 
+    /// <inheritdoc/>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)

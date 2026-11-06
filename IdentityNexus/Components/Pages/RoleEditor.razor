@@ -112,12 +112,24 @@
 <ConfirmDialog @ref="confirm" />
 
 @code {
+    /// <summary>
+    /// Gets or sets the role.
+    /// </summary>
     [Parameter] public RoleSummary? Role { get; set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether this instance is new.
+    /// </summary>
     [Parameter] public bool IsNew { get; set; }
 
+    /// <summary>
+    /// Gets or sets the callback raised for the close event.
+    /// </summary>
     [Parameter] public EventCallback OnClose { get; set; }
 
+    /// <summary>
+    /// Gets or sets the callback raised for the changed event.
+    /// </summary>
     [Parameter] public EventCallback<string?> OnChanged { get; set; }
 
     private ConfirmDialog confirm = default!;
@@ -135,6 +147,7 @@
     private string customClaimType = string.Empty;
     private string claimValue = string.Empty;
 
+    /// <inheritdoc/>
     protected override void OnParametersSet()
     {
         string key = IsNew ? "new" : Role?.Id ?? string.Empty;

@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 namespace IdentityNexus.Services;
 
+/// <summary>
+/// Provides extension methods for service collections.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
     extension<TUser, TRole>(IServiceCollection services)

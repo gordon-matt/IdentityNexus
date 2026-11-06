@@ -9,6 +9,9 @@ namespace IdentityNexus.Extensibility;
 /// <param name="Name">The user name or role name as last saved.</param>
 public sealed record IdentitySubject(IdentitySubjectKind Kind, string? Id, string? Name)
 {
+    /// <summary>
+    /// Gets a value indicating whether this instance is new.
+    /// </summary>
     public bool IsNew => Id is null;
 }
 
@@ -23,6 +26,9 @@ public sealed record IdentitySubject(IdentitySubjectKind Kind, string? Id, strin
 /// </remarks>
 public abstract class IdentityNexusSection : ComponentBase
 {
+    /// <summary>
+    /// Gets or sets the subject.
+    /// </summary>
     [Parameter, EditorRequired]
     public IdentitySubject Subject { get; set; } = default!;
 

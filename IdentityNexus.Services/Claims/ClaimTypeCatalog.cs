@@ -20,10 +20,18 @@ public static class ClaimTypeCatalog
             .ToDictionary(group => group.Key, group => group.First().Name, StringComparer.Ordinal);
     }
 
+    /// <summary>
+    /// Gets the all.
+    /// </summary>
     public static IReadOnlyList<ClaimTypeOption> All { get; }
 
     private static readonly Dictionary<string, string> NamesByType;
 
+    /// <summary>
+    /// Gets the display name.
+    /// </summary>
+    /// <param name="type">The type.</param>
+    /// <returns>The display name.</returns>
     public static string DisplayName(string type) =>
         NamesByType.TryGetValue(type, out string? name) ? name : type;
 }

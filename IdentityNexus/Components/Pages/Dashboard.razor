@@ -46,6 +46,7 @@
     private IdentityOverview? overview;
     private string? error;
 
+    /// <inheritdoc/>
     protected override async Task OnInitializedAsync()
     {
         var result = await Users.GetOverviewAsync();

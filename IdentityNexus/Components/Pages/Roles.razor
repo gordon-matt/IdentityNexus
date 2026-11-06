@@ -73,6 +73,7 @@
     private bool editorOpen;
     private bool isNew;
 
+    /// <inheritdoc/>
     protected override async Task OnInitializedAsync() => await ReloadAsync(null);
 
     private async Task ReloadAsync(string? id)

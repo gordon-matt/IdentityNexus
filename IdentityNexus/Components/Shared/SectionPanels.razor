@@ -16,8 +16,14 @@
 }
 
 @code {
+    /// <summary>
+    /// Gets or sets the sections.
+    /// </summary>
     [Parameter, EditorRequired] public IList<EditorSection> Sections { get; set; } = [];
 
+    /// <summary>
+    /// Gets or sets the subject.
+    /// </summary>
     [Parameter, EditorRequired] public IdentitySubject Subject { get; set; } = default!;
 
     /// <summary>Index of the section on show, or null when one of the editor's own tabs is open.</summary>
@@ -26,6 +32,7 @@
     private readonly Dictionary<int, DynamicComponent?> panels = [];
     private Dictionary<string, object?> parameters = [];
 
+    /// <inheritdoc/>
     protected override void OnParametersSet() =>
         parameters = new Dictionary<string, object?> { [nameof(IdentityNexusSection.Subject)] = Subject };
 

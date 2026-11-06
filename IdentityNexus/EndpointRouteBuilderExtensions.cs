@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Routing;
 
 namespace IdentityNexus;
 
+/// <summary>
+/// Provides extension methods for endpoint route builders.
+/// </summary>
 public static class EndpointRouteBuilderExtensions
 {
     extension(IEndpointRouteBuilder endpoints)

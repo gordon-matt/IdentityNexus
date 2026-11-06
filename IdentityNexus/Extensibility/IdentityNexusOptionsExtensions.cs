@@ -2,6 +2,9 @@ using IdentityNexus.Services.Extensibility;
 
 namespace IdentityNexus.Extensibility;
 
+/// <summary>
+/// Provides extension methods for identity nexus options.
+/// </summary>
 public static class IdentityNexusOptionsExtensions
 {
     extension(IdentityNexusOptions options)

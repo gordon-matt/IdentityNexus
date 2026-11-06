@@ -139,6 +139,7 @@
     private int pageCount = 1;
     private CancellationTokenSource? searchDelay;
 
+    /// <inheritdoc/>
     protected override async Task OnInitializedAsync()
     {
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);

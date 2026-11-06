@@ -5,10 +5,21 @@ namespace IdentityNexus;
 /// <summary>Puts the management pages on the host menu. The host places them with <c>AddIdentityNexus()</c>.</summary>
 public sealed class IdentityNexusMenuContributor(IOptions<IdentityNexusOptions> options) : INetForgeMenuContributor
 {
+    /// <summary>
+    /// Gets the name.
+    /// </summary>
     public string Name => "IdentityNexus";
 
+    /// <summary>
+    /// Gets the default menu.
+    /// </summary>
     public string DefaultMenu => "Membership";
 
+    /// <summary>
+    /// Performs the contribute operation.
+    /// </summary>
+    /// <param name="group">The group.</param>
+    /// <param name="configure">The configure.</param>
     public void Contribute(INetForgeMenuGroupBuilder group, Action<NetForgeMenuItemOptions>? configure)
     {
         string root = options.Value.BasePath.TrimEnd('/');
@@ -49,6 +60,11 @@ public static class IdentityNexusMenuExtensions
 {
     extension(INetForgeMenuGroupBuilder menu)
     {
+        /// <summary>
+        /// Adds the identity nexus.
+        /// </summary>
+        /// <param name="configure">The configure.</param>
+        /// <returns>The identity nexus.</returns>
         public INetForgeMenuGroupBuilder AddIdentityNexus(Action<NetForgeMenuItemOptions>? configure = null) =>
             menu.AddContributor("IdentityNexus", configure);
     }

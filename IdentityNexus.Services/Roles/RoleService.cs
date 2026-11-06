@@ -2,15 +2,29 @@ using IdentityNexus.Services.Extensibility;
 
 namespace IdentityNexus.Services.Roles;
 
+/// <summary>
+/// Represents the role service.
+/// </summary>
 public sealed class RoleService(
     ILogger<RoleService> logger,
     IRoleRepository roles,
     IdentityChangeNotifier changes) : IRoleService
 {
+    /// <summary>
+    /// Lists the value.
+    /// </summary>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result is the outcome for the role summaries.</returns>
     public Task<Result<IReadOnlyList<RoleSummary>>> ListAsync(CancellationToken cancellationToken = default) =>
         RunAsync("list roles", async () =>
             Result<IReadOnlyList<RoleSummary>>.Success(await roles.ListAsync(cancellationToken)));
 
+    /// <summary>
+    /// Gets the value.
+    /// </summary>
+    /// <param name="id">The identifier.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result is the outcome for the role summary.</returns>
     public Task<Result<RoleSummary>> GetAsync(string id, CancellationToken cancellationToken = default) =>
         RunAsync("load the role", async () =>
         {
@@ -20,6 +34,12 @@ public sealed class RoleService(
                 : Result<RoleSummary>.Success(role);
         });
 
+    /// <summary>
+    /// Saves the value.
+    /// </summary>
+    /// <param name="request">The request.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result is the outcome for the role summary.</returns>
     public Task<Result<RoleSummary>> SaveAsync(SaveRoleRequest request, CancellationToken cancellationToken = default) =>
         RunAsync("save the role", async () =>
         {
@@ -77,6 +97,12 @@ public sealed class RoleService(
                     : Result<RoleSummary>.Success(saved);
         });
 
+    /// <summary>
+    /// Deletes the value.
+    /// </summary>
+    /// <param name="id">The identifier.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the result.</returns>
     public Task<Result> DeleteAsync(string id, CancellationToken cancellationToken = default) =>
         RunAsync("delete the role", async () =>
         {

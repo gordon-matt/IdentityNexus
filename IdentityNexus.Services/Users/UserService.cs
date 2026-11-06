@@ -6,6 +6,9 @@ using Microsoft.Extensions.Options;
 
 namespace IdentityNexus.Services.Users;
 
+/// <summary>
+/// Represents the user service.
+/// </summary>
 public sealed class UserService(
     ILogger<UserService> logger,
     IOptions<IdentityNexusOptions> options,
@@ -16,6 +19,11 @@ public sealed class UserService(
 {
     private const int MaxPageSize = 100;
 
+    /// <summary>
+    /// Gets the overview.
+    /// </summary>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result is the outcome for the identity overview.</returns>
     public Task<Result<IdentityOverview>> GetOverviewAsync(CancellationToken cancellationToken = default) =>
         RunAsync("load the overview", async () =>
         {
@@ -24,6 +32,12 @@ public sealed class UserService(
             return Result<IdentityOverview>.Success(new IdentityOverview(counts.Users, roleCount, counts.LockedOut, counts.UnconfirmedEmail));
         });
 
+    /// <summary>
+    /// Searches the value.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result is the outcome for the user page.</returns>
     public Task<Result<UserPage>> SearchAsync(UserListQuery query, CancellationToken cancellationToken = default) =>
         RunAsync("search users", async () =>
         {
@@ -34,6 +48,12 @@ public sealed class UserService(
             return Result<UserPage>.Success(pageResult);
         });
 
+    /// <summary>
+    /// Gets the value.
+    /// </summary>
+    /// <param name="id">The identifier.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result is the outcome for the user detail.</returns>
     public Task<Result<UserDetail>> GetAsync(string id, CancellationToken cancellationToken = default) =>
         RunAsync("load the user", async () =>
         {
@@ -43,6 +63,12 @@ public sealed class UserService(
                 : Result<UserDetail>.Success(user);
         });
 
+    /// <summary>
+    /// Creates the value.
+    /// </summary>
+    /// <param name="request">The request.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result is the outcome for the user detail.</returns>
     public Task<Result<UserDetail>> CreateAsync(CreateUserRequest request, CancellationToken cancellationToken = default) =>
         RunAsync("create the user", async () =>
         {
@@ -81,6 +107,12 @@ public sealed class UserService(
                 : Result<UserDetail>.Created(created);
         });
 
+    /// <summary>
+    /// Updates the value.
+    /// </summary>
+    /// <param name="request">The request.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result is the outcome for the user detail.</returns>
     public Task<Result<UserDetail>> UpdateAsync(UpdateUserRequest request, CancellationToken cancellationToken = default) =>
         RunAsync("update the user", async () =>
         {
@@ -120,6 +152,12 @@ public sealed class UserService(
                 : Result<UserDetail>.Success(updated);
         });
 
+    /// <summary>
+    /// Sets the password.
+    /// </summary>
+    /// <param name="request">The request.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the result.</returns>
     public Task<Result> SetPasswordAsync(SetPasswordRequest request, CancellationToken cancellationToken = default) =>
         RunAsync("set the password", async () =>
         {
@@ -132,6 +170,12 @@ public sealed class UserService(
             return await UpdatedAsync(request.Id, identity, cancellationToken);
         });
 
+    /// <summary>
+    /// Removes the login.
+    /// </summary>
+    /// <param name="request">The request.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the result.</returns>
     public Task<Result> RemoveLoginAsync(RemoveLoginRequest request, CancellationToken cancellationToken = default) =>
         RunAsync("remove the external login", async () =>
         {
@@ -139,6 +183,12 @@ public sealed class UserService(
             return await UpdatedAsync(request.Id, identity, cancellationToken);
         });
 
+    /// <summary>
+    /// Resets the authenticator.
+    /// </summary>
+    /// <param name="id">The identifier.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the result.</returns>
     public Task<Result> ResetAuthenticatorAsync(string id, CancellationToken cancellationToken = default) =>
         RunAsync("reset the authenticator", async () =>
         {
@@ -146,6 +196,12 @@ public sealed class UserService(
             return await UpdatedAsync(id, identity, cancellationToken);
         });
 
+    /// <summary>
+    /// Deletes the value.
+    /// </summary>
+    /// <param name="id">The identifier.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the result.</returns>
     public Task<Result> DeleteAsync(string id, CancellationToken cancellationToken = default) =>
         RunAsync("delete the user", async () =>
         {

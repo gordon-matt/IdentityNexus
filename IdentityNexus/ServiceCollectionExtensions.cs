@@ -6,6 +6,9 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace IdentityNexus;
 
+/// <summary>
+/// Provides extension methods for service collections.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
     extension<TUser, TRole>(IServiceCollection services)
