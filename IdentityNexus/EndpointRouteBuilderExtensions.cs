@@ -1,3 +1,5 @@
+using Heroicsoft.NetForge.Components;
+using Heroicsoft.NetForge.WebAssets;
 using IdentityNexus.Components;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Routing;
@@ -19,9 +21,10 @@ public static class EndpointRouteBuilderExtensions
         public RouteGroupBuilder MapIdentityNexus()
         {
             var options = endpoints.ServiceProvider.GetRequiredService<IOptions<IdentityNexusOptions>>().Value;
-            var group = endpoints.MapGroup(options.BasePath);
+            endpoints.MapEmbeddedContent(typeof(EndpointRouteBuilderExtensions).Assembly);
+            endpoints.MapNetForgeAssets();
 
-            group.MapGet("_assets/{name}", EmbeddedAssets.Serve).ExcludeFromDescription();
+            var group = endpoints.MapGroup(options.BasePath);
             group.MapGet("_framework/blazor.web.js", ServeBlazorScript).ExcludeFromDescription();
 
             group.MapRazorComponents<IdentityNexusApp>()

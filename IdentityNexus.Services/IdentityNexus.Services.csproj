@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 		<RootNamespace>IdentityNexus.Services</RootNamespace>
 		<Description>Services for administering an ASP.NET Core Identity store.</Description>
-		<Version>1.1.1</Version>
+		<Version>1.1.2</Version>
 		<Authors>Matt Gordon</Authors>
 		<Company>Matt Gordon</Company>
 		<PackageTags>aspnetcore;identity;aspnetcore-identity;entityframeworkcore;efcore;user-management;role-management</PackageTags>
